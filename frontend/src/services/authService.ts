@@ -1,16 +1,10 @@
+import { userPool } from "@/config/cognito";
 import {
     CognitoUser,
-    CognitoUserPool,
     AuthenticationDetails,
     CognitoUserAttribute,
   } from "amazon-cognito-identity-js";
   
-  const poolData = {
-    UserPoolId: import.meta.env.VITE_AWS_USER_POOL_ID,
-    ClientId: import.meta.env.VITE_AWS_USER_POOL_WEB_CLIENT_ID,
-  };
-  
-  const userPool = new CognitoUserPool(poolData);
   
   export const authService = {
     signUp: async (
