@@ -178,11 +178,59 @@ export default function Register() {
             Crear Cuenta
           </Typography>
 
-          <Stepper activeStep={activeStep} sx={{ width: "100%", mb: 4 }}>
+          <Stepper
+            activeStep={activeStep}
+            sx={{
+              width: '100%',
+              maxWidth: '600px',
+              margin: '0 auto',
+              mb: 4,
+              mt: 2,
+              '& .MuiStepLabel-root': {
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+                '& .MuiStepLabel-labelContainer': {
+                  textAlign: 'center',
+                  marginTop: 1,
+                },
+                '& .MuiStepLabel-label': {
+                  color: 'white',
+                  fontSize: '0.875rem',
+                },
+                '& .MuiStepIcon-root': {
+                  width: '35px',
+                  height: '35px',
+                  color: 'rgba(255, 255, 255, 0.3)',
+                  '&.Mui-active': {
+                    color: 'primary.main',
+                  },
+                  '&.Mui-completed': {
+                    color: 'primary.main',
+                  },
+                },
+              },
+              '& .MuiStepConnector-root': {
+                top: '17px',
+                '& .MuiStepConnector-line': {
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                },
+              },
+            }}
+          >
             {steps.map((label) => (
               <Step key={label}>
                 <StepLabel>
-                  <Typography color="white">{label}</Typography>
+                  <Typography 
+                    sx={{ 
+                      fontSize: '0.875rem',
+                      maxWidth: '120px',
+                      textAlign: 'center',
+                      lineHeight: 1.2
+                    }}
+                  >
+                    {label}
+                  </Typography>
                 </StepLabel>
               </Step>
             ))}
