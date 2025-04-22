@@ -20,6 +20,7 @@ import { useAuthStore } from "../store/authStore";
 import backgroundImage from "../assets/background.jpg";
 import neuroLogo from "../assets/neuro.jpeg";
 import FinancialPersonalityQuiz from "../components/FinancialPersonalityQuiz";
+import ConfirmSignUp from "../components/ConfirmSignUp";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -34,7 +35,11 @@ export default function Register() {
     financialPersonality: "",
   });
 
-  const steps = ['Información Personal', 'Cuestionario de Personalidad'];
+  const steps = [
+    "Información Personal",
+    "Cuestionario de Personalidad",
+    "Confirmación",
+  ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -46,16 +51,16 @@ export default function Register() {
   };
 
   const handleQuizComplete = (personality: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      financialPersonality: personality
+      financialPersonality: personality,
     }));
     handleSubmit();
   };
 
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (activeStep === 0) {
       if (formData.password !== formData.confirmPassword) {
         setError("Las contraseñas no coinciden");
@@ -74,15 +79,19 @@ export default function Register() {
         formData.password,
         formData.financialPersonality
       );
-      navigate("/login", { 
-        state: { 
-          message: "Registro exitoso. Por favor inicia sesión.",
-          personality: formData.financialPersonality 
-        } 
-      });
+      setActiveStep(2);
     } catch (err) {
       console.error("Error de registro:", err);
     }
+  };
+
+  const handleConfirmComplete = () => {
+    navigate("/login", {
+      state: {
+        message: "Registro exitoso. Por favor inicia sesión.",
+        personality: formData.financialPersonality,
+      },
+    });
   };
 
   return (
@@ -169,7 +178,7 @@ export default function Register() {
             Crear Cuenta
           </Typography>
 
-          <Stepper activeStep={activeStep} sx={{ width: '100%', mb: 4 }}>
+          <Stepper activeStep={activeStep} sx={{ width: "100%", mb: 4 }}>
             {steps.map((label) => (
               <Step key={label}>
                 <StepLabel>
@@ -414,10 +423,15 @@ export default function Register() {
               </Link>
             </Box>
           </Box>
-        ) : (
+        ) : activeStep === 1 ? (
           <FinancialPersonalityQuiz onComplete={handleQuizComplete} />
+        ) : (
+          <ConfirmSignUp
+            email={formData.email}
+            onComplete={handleConfirmComplete}
+          />
         )}
       </Paper>
     </Container>
   );
-} 
+}
