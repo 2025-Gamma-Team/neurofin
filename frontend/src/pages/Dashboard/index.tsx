@@ -24,6 +24,8 @@ interface LocationInfo {
   };
 }
 
+
+
 const mockTransactions: Transaction[] = [
   { date: '01/01/2024', description: 'Salario', amount: 3000, type: 'ingreso' },
   { date: '02/01/2024', description: 'Supermercado', amount: 150, type: 'gasto' },
