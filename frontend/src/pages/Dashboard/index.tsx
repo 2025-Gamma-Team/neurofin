@@ -5,7 +5,7 @@ import ExpensesChart from '../../components/ExpensesChart/ExpensesChart';
 import { TransactionsChart } from '../../components/TransactionsChart/TransactionsChart';
 import { Avatar } from '../../components/Avatar/Avatar';
 import { UserAvatar } from '../../components/UserAvatar/UserAvatar';
-import { Map } from '../../components/Map/Map';
+import Map from '../../components/Map/Map';
 
 interface Transaction {
   date: string;
@@ -308,13 +308,11 @@ const Dashboard = () => {
               }}>
                 {locationInfo && (
                   <Map
-                    center={[locationInfo.coordinates.lat, locationInfo.coordinates.lng]}
-                    zoom={13}
+                    center={[19.4326, -99.1332]}
                     markers={[
                       {
-                        position: [locationInfo.coordinates.lat, locationInfo.coordinates.lng],
-                        title: "Tu ubicación",
-                        description: `${locationInfo.country} - ${locationInfo.timezone}`
+                        position: [19.4326, -99.1332],
+                        popup: "Sucursal Principal"
                       }
                     ]}
                   />

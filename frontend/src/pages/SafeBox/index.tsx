@@ -307,7 +307,7 @@ const SafeBox = () => {
             onClick={handleTransaction} 
             variant="contained" 
             color="primary"
-            disabled={withdrawAmount <= 0 || (isDeposit ? false : selectedGoal && withdrawAmount > selectedGoal.currentAmount)}
+            disabled={withdrawAmount <= 0 || (isDeposit === false && selectedGoal !== null && withdrawAmount > selectedGoal.currentAmount)}
           >
             {isDeposit ? 'Agregar' : 'Retirar'}
           </Button>
