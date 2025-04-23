@@ -24,6 +24,7 @@ import {
   School as SchoolIcon,
   AccountBalance as AccountBalanceIcon,
   Logout as LogoutIcon,
+  SportsEsports as GameIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../store/authStore";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
@@ -55,6 +56,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: "Pagos Domiciliados", icon: <PaymentIcon />, path: "/payments" },
     { text: "Educación Financiera", icon: <SchoolIcon />, path: "/education" },
     { text: "Caja Fuerte", icon: <AccountBalanceIcon />, path: "/safebox" },
+    { text: "Juego Financiero", icon: <GameIcon />, path: "/game" },
   ];
 
   const drawer = (

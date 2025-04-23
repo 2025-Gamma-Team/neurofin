@@ -8,6 +8,7 @@ import Profile from "../pages/Profile";
 import RecurringPayments from "../pages/RecurringPayments";
 import FinancialEducation from "../pages/FinancialEducation";
 import SafeBox from "../pages/SafeBox";
+import Game from "../pages/Game";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
 const AppRoutes: React.FC = () => {
@@ -62,6 +63,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <SafeBox />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/game"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Game />
             </Layout>
           </ProtectedRoute>
         }
