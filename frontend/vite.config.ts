@@ -1,22 +1,35 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from "vite";
+import { defineConfig as defineViteConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineViteConfig({
   plugins: [react()],
+  define: {
+    global: "globalThis",
+  },
+  base: '/',
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
+      "./runtimeConfig": "./runtimeConfig.browser",
     },
   },
   server: {
     port: 3000,
     host: true,
-    strictPort: false
+    strictPort: false,
   },
   build: {
-    outDir: 'dist',
-    sourcemap: true
-  }
-})
+    outDir: "build",
+    sourcemap: true,
+    assetsDir: "assets",
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  },
+});
