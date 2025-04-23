@@ -1,8 +1,0 @@
-{
-    "appName": "NeuroFin",
-    "welcomeText": "Bienvenido a NeuroFin!",
-    "login": {
-        "forgotPassword": "Olvidaste contraseña?",
-        "login": "Entrar"
-    }
-}

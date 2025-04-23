@@ -26,56 +26,38 @@ import {
   Save,
   Refresh
 } from '@mui/icons-material';
-import { createAvatar } from '@dicebear/core';
-import { personas } from '@dicebear/collection';
+import { createAvatar } from '@dicebear/avatars';
+import * as style from '@dicebear/avatars-avataaars-sprites';
 
 interface UserAvatarProps {
   healthStatus?: 'excelente' | 'buena' | 'regular' | 'mala';
   onSave?: (avatarConfig: AvatarConfig) => void;
 }
 
-type HairColor = 'brown' | 'black' | 'blonde' | 'gray' | 'red';
-type SkinColor = 'light' | 'brown' | 'dark' | 'black' | 'yellow' | 'red' | 'white';
-type ClothesColor = 'white' | 'gray' | 'black' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink';
-type HairStyle = 'shortCombover' | 'curlyHighTop' | 'bobCut' | 'curly' | 'pigtails' | 'curlyBun' | 'buzzcut' | 'bobBangs' | 'bald' | 'balding' | 'cap' | 'bunUndercut' | 'mohawk';
-type EyeStyle = 'open' | 'sleep' | 'wink' | 'glasses' | 'happy' | 'sunglasses';
-type MouthStyle = 'smile' | 'frown' | 'surprise' | 'pacifier' | 'bigSmile' | 'smirk' | 'lips';
-type NoseStyle = 'mediumRound' | 'smallRound' | 'wrinkles';
-type BodyStyle = 'small' | 'squared' | 'rounded' | 'checkered';
-type FacialHairStyle = 'beardMustache' | 'pyramid' | 'walrus' | 'goatee' | 'shadow' | 'soulPatch';
+type HairColor = 'brown' | 'black' | 'auburn' | 'blonde' | 'pastelPink' | 'platinum' | 'red' | 'gray' | 'blondeGolden' | 'brownDark' | 'pastel' | 'silverGray';
+type SkinColor = 'tanned' | 'yellow' | 'pale' | 'light' | 'brown' | 'darkBrown' | 'black';
+type ClothesColor = 'blue01' | 'blue02' | 'blue03' | 'gray01' | 'gray02' | 'heather' | 'pastelBlue' | 'pastelGreen' | 'pastelOrange' | 'pastelRed' | 'pastelYellow' | 'pink' | 'red';
+type ClothesType = 'blazerShirt' | 'blazerSweater' | 'collarSweater' | 'hoodie' | 'overall' | 'shirtCrewNeck' | 'shirtVNeck';
+type AccessoryType = 'kurt' | 'prescription01' | 'prescription02' | 'round' | 'sunglasses' | 'wayfarers';
 
 interface AvatarConfig {
   seed: string;
   hairColor: HairColor;
   skinColor: SkinColor;
-  body?: BodyStyle;
-  eyes?: EyeStyle;
-  facialHair?: FacialHairStyle;
-  hair?: HairStyle;
-  mouth?: MouthStyle;
-  nose?: NoseStyle;
+  clothesColor: ClothesColor;
+  clothesType: ClothesType;
+  accessoriesType?: AccessoryType;
+  facialHair?: string;
+  eyebrow?: string;
+  mouth?: string;
+  eyes?: string;
 }
 
-const SKIN_COLORS: SkinColor[] = ['light', 'brown', 'dark', 'black', 'yellow', 'red', 'white'];
-const HAIR_COLORS: HairColor[] = ['brown', 'black', 'blonde', 'gray', 'red'];
-const CLOTHES_COLORS: ClothesColor[] = ['white', 'gray', 'black', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
-
-const HAIR_STYLES: HairStyle[] = ['shortCombover', 'curlyHighTop', 'bobCut', 'curly', 'pigtails', 'curlyBun', 'buzzcut', 'bobBangs', 'bald', 'balding', 'cap', 'bunUndercut', 'mohawk'];
-const EYE_STYLES: EyeStyle[] = ['open', 'sleep', 'wink', 'glasses', 'happy', 'sunglasses'];
-const MOUTH_STYLES: MouthStyle[] = ['smile', 'frown', 'surprise', 'pacifier', 'bigSmile', 'smirk', 'lips'];
-const NOSE_STYLES: NoseStyle[] = ['mediumRound', 'smallRound', 'wrinkles'];
-const BODY_STYLES: BodyStyle[] = ['small', 'squared', 'rounded', 'checkered'];
-
-const defaultConfig: AvatarConfig = {
-  seed: Math.random().toString(),
-  hairColor: 'brown',
-  skinColor: 'light',
-  body: 'small',
-  eyes: 'open',
-  mouth: 'smile',
-  nose: 'mediumRound',
-  hair: 'shortCombover'
-};
+const SKIN_COLORS: SkinColor[] = ['light', 'brown', 'darkBrown', 'black', 'tanned', 'yellow', 'pale'];
+const HAIR_COLORS: HairColor[] = ['brown', 'black', 'auburn', 'blonde', 'pastelPink', 'platinum', 'red', 'gray', 'blondeGolden', 'brownDark', 'pastel', 'silverGray'];
+const CLOTHES_TYPES: ClothesType[] = ['blazerShirt', 'blazerSweater', 'collarSweater', 'hoodie', 'overall', 'shirtCrewNeck', 'shirtVNeck'];
+const CLOTHES_COLORS: ClothesColor[] = ['blue01', 'blue02', 'blue03', 'gray01', 'gray02', 'heather', 'pastelBlue', 'pastelGreen', 'pastelOrange', 'pastelRed', 'pastelYellow', 'pink', 'red'];
+const ACCESSORIES: AccessoryType[] = ['kurt', 'prescription01', 'prescription02', 'round', 'sunglasses', 'wayfarers'];
 
 export const UserAvatar: React.FC<UserAvatarProps> = ({
   healthStatus = 'regular',
@@ -84,8 +66,23 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [avatarSvg, setAvatarSvg] = useState<string>('');
-  const [currentConfig, setCurrentConfig] = useState<AvatarConfig>({
-    ...defaultConfig
+  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(() => {
+    const savedConfig = localStorage.getItem('avatarConfig');
+    if (savedConfig) {
+      return JSON.parse(savedConfig);
+    }
+    return {
+      seed: 'neurofin',
+      hairColor: 'brown' as HairColor,
+      skinColor: 'light' as SkinColor,
+      clothesColor: 'blue01' as ClothesColor,
+      clothesType: 'blazerShirt' as ClothesType,
+      accessoriesType: undefined,
+      facialHair: undefined,
+      eyebrow: 'default',
+      mouth: 'smile',
+      eyes: 'default'
+    };
   });
 
   const getHealthStyle = (status: string) => {
@@ -95,35 +92,45 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           gradient: 'linear-gradient(45deg, #4CAF50 30%, #81C784 90%)',
           borderColor: theme.palette.success.main,
           shadowColor: 'rgba(76, 175, 80, 0.3)',
-          mouth: 'smile' as MouthStyle
+          clothesColor: 'pastelGreen' as ClothesColor,
+          clothesType: 'blazerShirt' as ClothesType,
+          mouth: 'smile'
         };
       case 'buena':
         return {
           gradient: 'linear-gradient(45deg, #2196F3 30%, #64B5F6 90%)',
           borderColor: theme.palette.info.main,
           shadowColor: 'rgba(33, 150, 243, 0.3)',
-          mouth: 'smile' as MouthStyle
+          clothesColor: 'pastelBlue' as ClothesColor,
+          clothesType: 'blazerSweater' as ClothesType,
+          mouth: 'smile'
         };
       case 'regular':
         return {
           gradient: 'linear-gradient(45deg, #FFC107 30%, #FFD54F 90%)',
           borderColor: theme.palette.warning.main,
           shadowColor: 'rgba(255, 193, 7, 0.3)',
-          mouth: 'frown' as MouthStyle
+          clothesColor: 'pastelYellow' as ClothesColor,
+          clothesType: 'shirtVNeck' as ClothesType,
+          mouth: 'default'
         };
       case 'mala':
         return {
           gradient: 'linear-gradient(45deg, #F44336 30%, #E57373 90%)',
           borderColor: theme.palette.error.main,
           shadowColor: 'rgba(244, 67, 54, 0.3)',
-          mouth: 'frown' as MouthStyle
+          clothesColor: 'pastelRed' as ClothesColor,
+          clothesType: 'hoodie' as ClothesType,
+          mouth: 'sad'
         };
       default:
         return {
           gradient: 'linear-gradient(45deg, #9C27B0 30%, #BA68C8 90%)',
           borderColor: theme.palette.primary.main,
           shadowColor: 'rgba(156, 39, 176, 0.3)',
-          mouth: 'smile' as MouthStyle
+          clothesColor: 'heather' as ClothesColor,
+          clothesType: 'shirtCrewNeck' as ClothesType,
+          mouth: 'default'
         };
     }
   };
@@ -131,32 +138,33 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   useEffect(() => {
     const healthStyle = getHealthStyle(healthStatus);
     const newConfig = {
-      ...currentConfig,
+      ...avatarConfig,
+      clothesColor: healthStyle.clothesColor,
+      clothesType: healthStyle.clothesType,
       mouth: healthStyle.mouth
     };
     updateAvatar(newConfig);
   }, [healthStatus]);
 
-  const updateAvatar = async (config: AvatarConfig) => {
+  const updateAvatar = (config: AvatarConfig) => {
     try {
-      const avatar = createAvatar(personas, {
+      const avatar = createAvatar(style, {
         seed: config.seed,
-        backgroundColor: ['transparent'],
-        hair: [config.hair || 'shortCombover'],
+        top: ['shortHair'],
+        accessories: config.accessoriesType ? [config.accessoriesType] : [],
         hairColor: [config.hairColor],
-        skinColor: [config.skinColor],
-        body: [config.body || 'small'],
-        eyes: [config.eyes || 'open'],
-        mouth: [config.mouth || 'smile'],
-        nose: [config.nose || 'mediumRound'],
         facialHair: config.facialHair ? [config.facialHair] : [],
-        radius: 50,
-        scale: 90,
+        clotheType: [config.clothesType],
+        clotheColor: [config.clothesColor],
+        skinColor: [config.skinColor],
+        eyebrowType: [config.eyebrow || 'default'],
+        mouthType: [config.mouth || 'default'],
+        eyeType: [config.eyes || 'default']
       });
 
-      const svg = await avatar.toString();
-      setAvatarSvg(svg);
-      setCurrentConfig(config);
+      setAvatarSvg(avatar);
+      setAvatarConfig(config);
+      localStorage.setItem('avatarConfig', JSON.stringify(config));
     } catch (error) {
       console.error('Error al generar el avatar:', error);
     }
@@ -168,139 +176,36 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
   const handleConfigChange = (key: keyof AvatarConfig, value: any) => {
     const newConfig = {
-      ...currentConfig,
+      ...avatarConfig,
       [key]: value === '' ? undefined : value
     };
     updateAvatar(newConfig);
   };
 
   const handleSave = () => {
-    localStorage.setItem('avatarConfig', JSON.stringify(currentConfig));
-    onSave?.(currentConfig);
+    localStorage.setItem('avatarConfig', JSON.stringify(avatarConfig));
+    onSave?.(avatarConfig);
   };
 
   const handleReset = () => {
     const healthStyle = getHealthStyle(healthStatus);
-    const newDefaultConfig = {
-      ...defaultConfig,
-      mouth: healthStyle.mouth
+    const defaultConfig = {
+      seed: 'neurofin',
+      hairColor: 'brown' as HairColor,
+      skinColor: 'light' as SkinColor,
+      clothesColor: healthStyle.clothesColor,
+      clothesType: healthStyle.clothesType,
+      accessoriesType: undefined,
+      facialHair: undefined,
+      eyebrow: 'default',
+      mouth: healthStyle.mouth,
+      eyes: 'default'
     };
-    updateAvatar(newDefaultConfig);
+    updateAvatar(defaultConfig);
+    localStorage.removeItem('avatarConfig');
   };
 
   const healthStyle = getHealthStyle(healthStatus);
-
-  const renderConfigOptions = () => {
-    switch (activeTab) {
-      case 0: // Características faciales
-        return (
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Estilo de pelo</InputLabel>
-                <Select
-                  value={currentConfig.hair || ''}
-                  onChange={(e) => handleConfigChange('hair', e.target.value)}
-                >
-                  {HAIR_STYLES.map((style) => (
-                    <MenuItem key={style} value={style}>
-                      {style}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Color de pelo</InputLabel>
-                <Select
-                  value={currentConfig.hairColor}
-                  onChange={(e) => handleConfigChange('hairColor', e.target.value)}
-                >
-                  {HAIR_COLORS.map((color) => (
-                    <MenuItem key={color} value={color}>
-                      {color}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Color de piel</InputLabel>
-                <Select
-                  value={currentConfig.skinColor}
-                  onChange={(e) => handleConfigChange('skinColor', e.target.value)}
-                >
-                  {SKIN_COLORS.map((color) => (
-                    <MenuItem key={color} value={color}>
-                      {color}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        );
-      case 1: // Expresiones
-        return (
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Ojos</InputLabel>
-                <Select
-                  value={currentConfig.eyes || ''}
-                  onChange={(e) => handleConfigChange('eyes', e.target.value)}
-                >
-                  {EYE_STYLES.map((style) => (
-                    <MenuItem key={style} value={style}>
-                      {style}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Boca</InputLabel>
-                <Select
-                  value={currentConfig.mouth || ''}
-                  onChange={(e) => handleConfigChange('mouth', e.target.value)}
-                >
-                  {MOUTH_STYLES.map((style) => (
-                    <MenuItem key={style} value={style}>
-                      {style}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Nariz</InputLabel>
-                <Select
-                  value={currentConfig.nose || ''}
-                  onChange={(e) => handleConfigChange('nose', e.target.value)}
-                >
-                  {NOSE_STYLES.map((style) => (
-                    <MenuItem key={style} value={style}>
-                      {style}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const tabs = [
-    { icon: <Face />, label: 'Características' },
-    { icon: <Mood />, label: 'Expresiones' }
-  ];
 
   return (
     <Card
@@ -361,16 +266,15 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
             >
               {avatarSvg ? (
                 <Box
-                  component="div"
                   dangerouslySetInnerHTML={{ __html: avatarSvg }}
                   sx={{
-                    width: '300px',
-                    height: '300px',
-                    margin: 'auto',
+                    width: '100%',
+                    height: '100%',
                     '& svg': {
                       width: '100%',
                       height: '100%',
-                      objectFit: 'contain'
+                      transform: 'scale(1.2)',
+                      transformOrigin: 'center center'
                     }
                   }}
                 />
@@ -408,13 +312,108 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
                 }
               }}
             >
-              {tabs.map((tab) => (
-                <Tab key={tab.label} icon={tab.icon} label={tab.label} />
-              ))}
+              <Tab icon={<Face />} label="Rostro" />
+              <Tab icon={<ColorLens />} label="Color" />
+              <Tab icon={<Style />} label="Ropa" />
+              <Tab icon={<Mood />} label="Expresión" />
             </Tabs>
 
             <Box sx={{ p: 2 }}>
-              {renderConfigOptions()}
+              {activeTab === 0 && (
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Tono de Piel</InputLabel>
+                      <Select
+                        value={avatarConfig.skinColor}
+                        onChange={(e) => handleConfigChange('skinColor', e.target.value as SkinColor)}
+                        label="Tono de Piel"
+                      >
+                        {SKIN_COLORS.map((color) => (
+                          <MenuItem key={color} value={color}>
+                            {color.charAt(0).toUpperCase() + color.slice(1).replace(/([A-Z])/g, ' $1')}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Accesorios</InputLabel>
+                      <Select
+                        value={avatarConfig.accessoriesType || ''}
+                        onChange={(e) => handleConfigChange('accessoriesType', e.target.value as AccessoryType)}
+                        label="Accesorios"
+                      >
+                        <MenuItem value="">Ninguno</MenuItem>
+                        {ACCESSORIES.map((accessory) => (
+                          <MenuItem key={accessory} value={accessory}>
+                            {accessory.charAt(0).toUpperCase() + accessory.slice(1).replace(/([A-Z])/g, ' $1')}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              )}
+
+              {activeTab === 1 && (
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth>
+                      <InputLabel>Color de Pelo</InputLabel>
+                      <Select
+                        value={avatarConfig.hairColor}
+                        onChange={(e) => handleConfigChange('hairColor', e.target.value as HairColor)}
+                        label="Color de Pelo"
+                      >
+                        {HAIR_COLORS.map((color) => (
+                          <MenuItem key={color} value={color}>
+                            {color.charAt(0).toUpperCase() + color.slice(1).replace(/([A-Z])/g, ' $1')}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              )}
+
+              {activeTab === 2 && (
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Tipo de Ropa</InputLabel>
+                      <Select
+                        value={avatarConfig.clothesType}
+                        onChange={(e) => handleConfigChange('clothesType', e.target.value as ClothesType)}
+                        label="Tipo de Ropa"
+                      >
+                        {CLOTHES_TYPES.map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1).replace(/([A-Z])/g, ' $1')}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Color de Ropa</InputLabel>
+                      <Select
+                        value={avatarConfig.clothesColor}
+                        onChange={(e) => handleConfigChange('clothesColor', e.target.value as ClothesColor)}
+                        label="Color de Ropa"
+                      >
+                        {CLOTHES_COLORS.map((color) => (
+                          <MenuItem key={color} value={color}>
+                            {color.charAt(0).toUpperCase() + color.slice(1).replace(/([A-Z])/g, ' $1')}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              )}
             </Box>
           </Grid>
         </Grid>
