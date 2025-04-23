@@ -1,14 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import {
-  CognitoUser,
-  AuthenticationDetails,
-  CognitoUserAttribute,
-  CognitoUserSession,
-} from "amazon-cognito-identity-js";
-import { userPool } from "../config/cognito";
+import api from "../utils/api";
+import axios from 'axios';
+
+const API_URL = 'http://localhost:3001/api';
 
 export interface User {
+  id: number;
   email: string;
   firstName: string;
   lastName: string;
@@ -44,49 +42,18 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const authenticationDetails = new AuthenticationDetails({
-            Username: email,
-            Password: password,
-          });
-
-          const cognitoUser = new CognitoUser({
-            Username: email,
-            Pool: userPool,
-          });
-
-          return new Promise((resolve, reject) => {
-            cognitoUser.authenticateUser(authenticationDetails, {
-              onSuccess: (session: CognitoUserSession) => {
-                const token = session.getIdToken().getJwtToken();
-                const user = {
-                  email: email,
-                  firstName: session.getIdToken().payload["name"] || "",
-                  lastName: session.getIdToken().payload["family_name"] || "",
-                  financialPersonality:
-                    session.getIdToken().payload[
-                      "custom:financialPersonality"
-                    ] || "",
-                };
-                set({
-                  user,
-                  token,
-                  isAuthenticated: true,
-                  isLoading: false,
-                });
-                resolve();
-              },
-              onFailure: (err) => {
-                set({
-                  error: err.message || "Error al iniciar sesión",
-                  isLoading: false,
-                });
-                reject(err);
-              },
+          const response = await api.post("/auth/login", { email, password });
+          if (response.data.success) {
+            set({
+              user: response.data.user,
+              token: response.data.token,
+              isAuthenticated: true,
+              isLoading: false,
             });
-          });
-        } catch (error: any) {
+          }
+        } catch (error) {
           set({
-            error: error.message || "Error al iniciar sesión",
+            error: "Credenciales inválidas",
             isLoading: false,
           });
           throw error;
@@ -101,52 +68,38 @@ export const useAuthStore = create<AuthState>()(
       ) => {
         set({ isLoading: true, error: null });
         try {
-          const attributeList = [
-            new CognitoUserAttribute({ Name: "name", Value: firstName }),
-            new CognitoUserAttribute({ Name: "family_name", Value: lastName }),
-            new CognitoUserAttribute({ Name: "email", Value: email }),
-            new CognitoUserAttribute({
-              Name: "custom:financialPersonality",
-              Value: financialPersonality,
-            }),
-          ];
+          const response = await api.post("/auth/register", {
+            firstName,
+            lastName,
+            email,
+            password,
+            financialPersonality,
+          });
 
-          return new Promise((resolve, reject) => {
-            userPool.signUp(
-              email,
-              password,
-              attributeList,
-              [],
-              (err, result) => {
-                if (err) {
-                  set({
-                    error: err.message || "Error durante el registro",
-                    isLoading: false,
-                  });
-                  reject(err);
-                  return;
-                }
-                set({
-                  isLoading: false,
-                  error: null,
-                });
-                resolve();
-              }
-            );
-          });
+          if (response.data.success) {
+            set({
+              user: response.data.user,
+              token: response.data.token,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+          }
         } catch (error: any) {
+          const errorMessage = error.response?.data?.message || 
+                             error.response?.data?.error_message ||
+                             "Error durante el registro";
           set({
-            error: error.message || "Error durante el registro",
+            error: errorMessage,
             isLoading: false,
+            isAuthenticated: false,
+            user: null,
+            token: null
           });
-          throw error;
+          throw new Error(errorMessage);
         }
       },
       logout: () => {
-        const cognitoUser = userPool.getCurrentUser();
-        if (cognitoUser) {
-          cognitoUser.signOut();
-        }
         set({
           user: null,
           token: null,
