@@ -193,10 +193,13 @@ export default function Register() {
                 '& .MuiStepLabel-labelContainer': {
                   textAlign: 'center',
                   marginTop: 1,
+                  width: '100%',
                 },
                 '& .MuiStepLabel-label': {
                   color: 'white',
                   fontSize: '0.875rem',
+                  width: '100%',
+                  display: 'block',
                 },
                 '& .MuiStepIcon-root': {
                   width: '35px',
@@ -215,6 +218,10 @@ export default function Register() {
                 '& .MuiStepConnector-line': {
                   borderColor: 'rgba(255, 255, 255, 0.3)',
                 },
+              },
+              '& .MuiStep-root': {
+                flex: 1,
+                padding: '0 8px',
               },
             }}
           >
