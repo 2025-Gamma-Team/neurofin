@@ -67,7 +67,6 @@ export default function Profile() {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [isCurrencyDialogOpen, setIsCurrencyDialogOpen] = useState(false);
-  const [isProfilePictureDialogOpen, setIsProfilePictureDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -113,7 +112,11 @@ export default function Profile() {
     symbol: '$',
     name: 'Peso Mexicano'
   });
-  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [userBadges, setUserBadges] = useState([
+    { icon: <LocationIcon />, text: 'México', color: '#FF9800' },
+    { icon: <MoneyIcon />, text: 'Moneda: MXN', color: '#4CAF50' },
+    { icon: <LanguageIcon />, text: 'Zona: America/Mexico_City', color: '#2196F3' }
+  ]);
 
   useEffect(() => {
     const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
@@ -243,12 +246,6 @@ export default function Profile() {
   const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-  const userBadges = [
-    { icon: <LocationIcon />, text: 'México', color: '#FF9800' },
-    { icon: <MoneyIcon />, text: 'Moneda: MXN', color: '#4CAF50' },
-    { icon: <LanguageIcon />, text: 'Zona: America/Mexico_City', color: '#2196F3' }
-  ];
-
   const handleSettingsOpen = () => {
     setIsSettingsDialogOpen(true);
   };
@@ -298,7 +295,17 @@ export default function Profile() {
   };
 
   const handleLocationSave = () => {
-    // Aquí iría la lógica para guardar la ubicación
+    // Actualizar el badge de ubicación
+    const updatedBadges = userBadges.map(badge => {
+      if (badge.text.includes('México')) {
+        return { ...badge, text: location.country };
+      }
+      if (badge.text.includes('Zona')) {
+        return { ...badge, text: `Zona: ${location.timezone}` };
+      }
+      return badge;
+    });
+    setUserBadges(updatedBadges);
     setIsLocationDialogOpen(false);
   };
 
@@ -311,32 +318,15 @@ export default function Profile() {
   };
 
   const handleCurrencySave = () => {
-    // Aquí iría la lógica para guardar la moneda
+    // Actualizar el badge de moneda
+    const updatedBadges = userBadges.map(badge => {
+      if (badge.text.includes('Moneda')) {
+        return { ...badge, text: `Moneda: ${currency.code}` };
+      }
+      return badge;
+    });
+    setUserBadges(updatedBadges);
     setIsCurrencyDialogOpen(false);
-  };
-
-  const handleProfilePictureOpen = () => {
-    setIsProfilePictureDialogOpen(true);
-  };
-
-  const handleProfilePictureClose = () => {
-    setIsProfilePictureDialogOpen(false);
-  };
-
-  const handleProfilePictureSave = () => {
-    // Aquí iría la lógica para guardar la foto de perfil
-    setIsProfilePictureDialogOpen(false);
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePicture(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   return (
@@ -1149,66 +1139,6 @@ export default function Profile() {
         <DialogActions>
           <Button onClick={handleCurrencyClose}>Cancelar</Button>
           <Button onClick={handleCurrencySave} variant="contained" color="primary">
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Modal de Foto de Perfil */}
-      <Dialog open={isProfilePictureDialogOpen} onClose={handleProfilePictureClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Cambiar Foto de Perfil</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Box
-              sx={{
-                width: 150,
-                height: 150,
-                borderRadius: '50%',
-                margin: '0 auto',
-                overflow: 'hidden',
-                border: '2px solid #e0e0e0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: '#f5f5f5'
-              }}
-            >
-              {profilePicture ? (
-                <img
-                  src={profilePicture}
-                  alt="Foto de perfil"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <PersonIcon sx={{ fontSize: 80, color: '#9e9e9e' }} />
-              )}
-            </Box>
-            <Button
-              component="label"
-              variant="contained"
-              sx={{ mt: 2 }}
-            >
-              Subir Foto
-              <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={handleFileUpload}
-              />
-            </Button>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Formatos permitidos: JPG, PNG. Tamaño máximo: 5MB
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleProfilePictureClose}>Cancelar</Button>
-          <Button 
-            onClick={handleProfilePictureSave} 
-            variant="contained" 
-            color="primary"
-            disabled={!profilePicture}
-          >
             Guardar
           </Button>
         </DialogActions>
