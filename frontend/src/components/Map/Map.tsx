@@ -21,20 +21,14 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapProps {
-  center?: [number, number];
-  zoom?: number;
+  center: [number, number];
   markers?: Array<{
     position: [number, number];
-    title: string;
-    description?: string;
+    popup?: string;
   }>;
 }
 
-export const Map: React.FC<MapProps> = ({
-  center = [19.4326, -99.1332], // Ciudad de México por defecto
-  zoom = 13,
-  markers = []
-}) => {
+const Map: React.FC<MapProps> = ({ center, markers = [] }) => {
   return (
     <Box sx={{
       height: '400px',
@@ -49,8 +43,8 @@ export const Map: React.FC<MapProps> = ({
       }
     }}>
       <MapContainer
-        center={center}
-        zoom={zoom}
+        center={[center[0], center[1]]}
+        zoom={13}
         scrollWheelZoom={false}
         style={{ height: '100%', width: '100%' }}
       >
@@ -62,20 +56,18 @@ export const Map: React.FC<MapProps> = ({
           <Marker
             key={index}
             position={marker.position}
+            icon={L.icon({
+              iconUrl: 'marker-icon.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+            })}
           >
-            <Popup>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {marker.title}
-              </Typography>
-              {marker.description && (
-                <Typography variant="body2">
-                  {marker.description}
-                </Typography>
-              )}
-            </Popup>
+            {marker.popup && <Popup>{marker.popup}</Popup>}
           </Marker>
         ))}
       </MapContainer>
     </Box>
   );
 };
+
+export default Map;
