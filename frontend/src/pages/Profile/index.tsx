@@ -55,9 +55,36 @@ import {
   Shield as ShieldIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
+import { jwtDecode } from "jwt-decode";
+import api from "../../utils/api";
+
+interface BalanceEntry {
+  id: number;
+  name: string;
+  type: 'ingreso' | 'egreso';
+  amount: number;
+  date: string;
+}
+
+interface APIBalanceEntry {
+  userId: string;
+  amount: number;
+  income: boolean;
+  name: string;
+  date: string;
+}
+
+interface DecodedToken {
+  sub: string;           // Cognito User ID
+  email: string;
+  'cognito:username': string;
+  exp: number;
+  iat: number;
+  // ... otros campos que pueda tener el token
+}
 
 export default function Profile() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const theme = useTheme();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
@@ -67,6 +94,7 @@ export default function Profile() {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [isCurrencyDialogOpen, setIsCurrencyDialogOpen] = useState(false);
+  const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -117,12 +145,72 @@ export default function Profile() {
     { icon: <MoneyIcon />, text: 'Moneda: MXN', color: '#4CAF50' },
     { icon: <LanguageIcon />, text: 'Zona: America/Mexico_City', color: '#2196F3' }
   ]);
+  const [newBalance, setNewBalance] = useState({
+    name: '',
+    type: 'ingreso',
+    amount: ''
+  });
+  const [balanceList, setBalanceList] = useState<Array<{
+    id: number;
+    name: string;
+    type: 'ingreso' | 'egreso';
+    amount: number;
+    date: string;
+  }>>([]);
+
+  const getUserIdFromToken = (): string => {
+    if (!token) return '';
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      console.log('Token decodificado:', decoded); // Para debug
+      return decoded.sub || ''; // El sub del token contiene el userId de Cognito
+    } catch (error) {
+      console.error('Error decodificando token:', error);
+      return '';
+    }
+  };
 
   useEffect(() => {
     const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     setBalanceTotal(totalIncome - totalExpenses);
   }, [incomes, expenses]);
+
+  // Cargar movimientos al iniciar
+  useEffect(() => {
+    if (token) {
+      fetchBalanceEntries();
+    }
+  }, [token]);
+
+  const fetchBalanceEntries = async () => {
+    try {
+      const userId = getUserIdFromToken();
+      console.log('Fetching balance for userId:', userId);
+      
+      if (!userId) {
+        throw new Error('No se pudo obtener el userId');
+      }
+
+      const response = await api.get(`/balance/${userId}`);
+      console.log('API Response:', response.data);
+      
+      const parsedBody = JSON.parse(response.data.body);
+      
+      if (parsedBody.success && Array.isArray(parsedBody.data)) {
+        const formattedEntries: BalanceEntry[] = parsedBody.data.map((entry: APIBalanceEntry) => ({
+          id: Date.now() + Math.random(),
+          name: entry.name,
+          type: entry.income ? 'ingreso' : 'egreso',
+          amount: Number(entry.amount),
+          date: entry.date
+        }));
+        setBalanceList(formattedEntries);
+      }
+    } catch (error) {
+      console.error('Error al cargar los movimientos:', error);
+    }
+  };
 
   const handleEditOpen = () => {
     setEditFormData({
@@ -327,6 +415,63 @@ export default function Profile() {
     });
     setUserBadges(updatedBadges);
     setIsCurrencyDialogOpen(false);
+  };
+
+  const handleBalanceOpen = () => {
+    setNewBalance({ name: '', type: 'ingreso', amount: '' });
+    setIsBalanceDialogOpen(true);
+  };
+
+  const handleBalanceClose = () => {
+    setIsBalanceDialogOpen(false);
+  };
+
+  const handleBalanceSave = async () => {
+    if (!newBalance.name || !newBalance.amount || !token) {
+      return;
+    }
+
+    const userId = getUserIdFromToken();
+    const newEntry = {
+      userId: userId,
+      amount: Number(newBalance.amount),
+      income: newBalance.type === 'ingreso',
+      name: newBalance.name,
+      date: new Date().toISOString()
+    };
+
+    try {
+      console.log('Enviando entrada:', newEntry);
+      const response = await api.post('/balance', newEntry);
+      console.log('Respuesta del servidor:', response.data);
+      const parsedBody = JSON.parse(response.data.body);
+      
+      if (parsedBody.success) {
+        const newBalanceEntry: BalanceEntry = {
+          id: Date.now(),
+          name: parsedBody.data.name,
+          type: parsedBody.data.income ? 'ingreso' : 'egreso',
+          amount: Number(parsedBody.data.amount),
+          date: parsedBody.data.date
+        };
+        
+        setBalanceList(prevList => [newBalanceEntry, ...prevList]);
+        setIsBalanceDialogOpen(false);
+        setNewBalance({ name: '', type: 'ingreso', amount: '' });
+      }
+    } catch (error) {
+      console.error('Error al guardar el movimiento:', error);
+    }
+  };
+
+  const handleDeleteBalance = async (id: number) => {
+    try {
+      await api.delete(`/balance/${id}`);
+      // Actualizar la lista de movimientos
+      await fetchBalanceEntries();
+    } catch (error) {
+      console.error('Error al eliminar el movimiento:', error);
+    }
   };
 
   return (
@@ -542,6 +687,51 @@ export default function Profile() {
               </Grid>
             </Paper>
           </Grid>
+        </Grid>
+
+        {/* Balance Section */}
+        <Grid item xs={12} md={6}>
+          <Paper
+            elevation={3}
+            sx={{
+              p: 3,
+              bgcolor: theme.palette.background.paper,
+              borderRadius: 2
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">Balance</Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleBalanceOpen}
+                sx={{ borderRadius: 2 }}
+              >
+                Agregar Movimiento
+              </Button>
+            </Box>
+
+            <List>
+              {balanceList.map((item) => (
+                <ListItem
+                  key={item.id}
+                  secondaryAction={
+                    <IconButton edge="end" onClick={() => handleDeleteBalance(item.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  }
+                >
+                  <ListItemIcon>
+                    {item.type === 'ingreso' ? <AddIcon color="success" /> : <RemoveIcon color="error" />}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.name}
+                    secondary={`${item.type === 'ingreso' ? '+' : '-'}$${item.amount.toLocaleString()}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
         </Grid>
       </Grid>
 
@@ -927,6 +1117,48 @@ export default function Profile() {
         <DialogActions>
           <Button onClick={handleCurrencyClose}>Cancelar</Button>
           <Button onClick={handleCurrencySave} variant="contained" color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Balance Dialog */}
+      <Dialog open={isBalanceDialogOpen} onClose={handleBalanceClose}>
+        <DialogTitle>Agregar Movimiento</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label="Nombre"
+              value={newBalance.name}
+              onChange={(e) => setNewBalance({ ...newBalance, name: e.target.value })}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>Tipo</InputLabel>
+              <Select
+                value={newBalance.type}
+                label="Tipo"
+                onChange={(e) => setNewBalance({ ...newBalance, type: e.target.value })}
+              >
+                <MenuItem value="ingreso">Ingreso</MenuItem>
+                <MenuItem value="egreso">Egreso</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Cantidad"
+              type="number"
+              value={newBalance.amount}
+              onChange={(e) => setNewBalance({ ...newBalance, amount: e.target.value })}
+              fullWidth
+              InputProps={{
+                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleBalanceClose}>Cancelar</Button>
+          <Button onClick={handleBalanceSave} variant="contained" color="primary">
             Guardar
           </Button>
         </DialogActions>
