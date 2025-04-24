@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -14,7 +14,10 @@ import {
   DialogActions,
   TextField,
   IconButton,
-  Stack
+  Stack,
+  Alert,
+  Snackbar,
+  MenuItem
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -22,77 +25,198 @@ import {
   OpenInNew as OpenInNewIcon,
   DeleteOutline as DeleteIcon
 } from '@mui/icons-material';
+import { useAuthStore } from '../../store/authStore';
+import { jwtDecode } from 'jwt-decode';
 
-interface RecurringPayment {
-  id: string;
-  service: string;
-  amount: number;
-  nextPayment: string;
-  status: 'active' | 'pending' | 'cancelled';
-  website: string;
-  description?: string;
+interface ApiPayment {
+  frecuency: string;
+  se_t: number;
+  amount?: number;
+  lastPaymentDay: string;
+  serviceName: string;
+  cancelUrl: string;
+  userId: string;
+  subscriptionId: string;
+  status: boolean;
 }
 
-const RecurringPayments = () => {
-  const [payments, setPayments] = useState<RecurringPayment[]>([
-    {
-      id: '1',
-      service: 'Netflix',
-      amount: 15.99,
-      nextPayment: '2024-04-13',
-      status: 'active',
-      website: 'https://netflix.com',
-      description: 'Plan Premium 4K'
-    },
-    {
-      id: '2',
-      service: 'Spotify',
-      amount: 9.99,
-      nextPayment: '2024-04-08',
-      status: 'active',
-      website: 'https://spotify.com',
-      description: 'Plan Individual'
-    },
-    {
-      id: '3',
-      service: 'Amazon Prime',
-      amount: 12.99,
-      nextPayment: '2024-04-18',
-      status: 'active',
-      website: 'https://amazon.com',
-      description: 'Prime + Video + Music'
-    }
-  ]);
+interface ApiResponse {
+  success: boolean;
+  data: ApiPayment[];
+  body: any;
+  count: number;
+}
 
+interface RecurringPayment {
+  id?: string;
+  serviceName: string;
+  amount: number;
+  lastPaymentDay?: string;
+  status: boolean;
+  cancelUrl: string;
+  description?: string;
+  frequency: 'mensual' | 'yearly';
+  userId?: string;
+  subscriptionId?: string;
+}
+
+interface DecodedToken {
+  'cognito:username': string;
+  email: string;
+  name: string;
+  family_name: string;
+}
+
+const API_URL = 'https://xr601d9sn5.execute-api.us-east-1.amazonaws.com/prod/subscriptions';
+
+const RecurringPayments = () => {
+  const { token, user } = useAuthStore();
+  const [payments, setPayments] = useState<RecurringPayment[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<RecurringPayment | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const totalMonthly = payments
-    .filter(payment => payment.status === 'active')
-    .reduce((sum, payment) => sum + payment.amount, 0);
-
-  const handleEditPayment = (payment: RecurringPayment) => {
-    setEditingPayment(payment);
-    setIsDialogOpen(true);
+  const getUserIdFromToken = (): string => {
+    if (!token) return '';
+    const decoded = jwtDecode<DecodedToken>(token);
+    return decoded['cognito:username'];
   };
 
-  const handleDeletePayment = (id: string) => {
-    setPayments(payments.filter(payment => payment.id !== id));
+  const fetchSubscriptions = async () => {
+    try {
+      const userId = getUserIdFromToken();
+      const response = await fetch(`${API_URL}/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+      
+      const responseText = await response.text();
+      
+      try {
+        const parsedResponse = JSON.parse(responseText);
+        const responseData = JSON.parse(parsedResponse.body);
+        
+        if (responseData.success && Array.isArray(responseData.data)) {
+          const formattedPayments: RecurringPayment[] = responseData.data.map((payment: any) => ({
+            serviceName: payment.serviceName,
+            amount: payment.amount,
+            lastPaymentDay: payment.lastPaymentDay,
+            status: payment.status,
+            cancelUrl: payment.cancelUrl,
+            frequency: payment.frecuency as 'mensual' | 'yearly',
+            userId: payment.userId,
+            subscriptionId: payment.subscriptionId
+          }));
+          
+          setPayments(formattedPayments);
+        }
+      } catch (parseError) {
+        throw new Error('Error al procesar la respuesta del servidor');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar las suscripciones');
+    }
   };
 
-  const handleSavePayment = () => {
-    if (!editingPayment?.service || !editingPayment?.amount || !editingPayment?.nextPayment) {
+  useEffect(() => {
+    if (token) {
+      fetchSubscriptions();
+    }
+  }, [token]);
+
+  const totalMonthly = useMemo(() => {
+    return payments
+      .filter(payment => payment.status)
+      .reduce((sum, payment) => sum + payment.amount, 0);
+  }, [payments]);
+
+  const handleSavePayment = async () => {
+    if (!editingPayment?.serviceName || !editingPayment?.amount) {
+      setError('Por favor completa todos los campos requeridos');
       return;
     }
 
-    if (editingPayment.id) {
-      setPayments(payments.map(p => p.id === editingPayment.id ? editingPayment : p));
-    } else {
-      setPayments([...payments, { ...editingPayment, id: Date.now().toString(), status: 'active' }]);
-    }
+    try {
+      const userId = getUserIdFromToken();
+      const subscriptionId = `sub_${Date.now()}`;
+      
+      const payloadData = {
+        userId,
+        subscriptionId,
+        amount: editingPayment.amount.toString(),
+        cancelUrl: editingPayment.cancelUrl,
+        frecuency: editingPayment.frequency === 'yearly' ? 'yearly' : 'monthly',
+        lastPaymentDay: new Date(editingPayment.lastPaymentDay || new Date()).toISOString(),
+        serviceName: editingPayment.serviceName,
+        status: "active"
+      };
 
-    setIsDialogOpen(false);
-    setEditingPayment(null);
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        mode: 'cors',
+        body: JSON.stringify(payloadData)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error al guardar: ${response.status} ${errorText}`);
+      }
+
+      const responseText = await response.text();
+      const parsedResponse = JSON.parse(responseText);
+      const responseData = JSON.parse(parsedResponse.body);
+
+      if (responseData.success && responseData.data) {
+        const savedPayment = responseData.data;
+        const formattedSavedPayment = {
+          ...savedPayment,
+          status: true,
+          amount: Number(savedPayment.amount),
+          frequency: savedPayment.frecuency === 'yearly' ? 'yearly' : 'mensual'
+        };
+        
+        setPayments(prev => [...prev, formattedSavedPayment]);
+        setSuccessMessage('Suscripción guardada exitosamente');
+        setIsDialogOpen(false);
+        setEditingPayment(null);
+      } else {
+        throw new Error('Error en el formato de la respuesta del servidor');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al guardar la suscripción');
+    }
+  };
+
+  const handleDeletePayment = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error al eliminar: ${response.status} ${errorText}`);
+      }
+
+      setPayments(payments.filter(payment => payment.id !== id));
+      setSuccessMessage('Suscripción eliminada exitosamente');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar la suscripción');
+    }
   };
 
   return (
@@ -101,7 +225,7 @@ const RecurringPayments = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box>
             <Typography variant="h5" sx={{ mb: 1 }}>
-              Pagos Domiciliados
+              {user ? `${user.firstName} ${user.lastName}` : 'Pagos Domiciliados'}
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
               Total Mensual: ${totalMonthly.toFixed(2)}
@@ -112,12 +236,11 @@ const RecurringPayments = () => {
             startIcon={<AddIcon />}
             onClick={() => {
               setEditingPayment({
-                id: '',
-                service: '',
+                serviceName: '',
                 amount: 0,
-                nextPayment: new Date().toISOString().split('T')[0],
-                status: 'active',
-                website: ''
+                status: true,
+                cancelUrl: '',
+                frequency: 'mensual'
               });
               setIsDialogOpen(true);
             }}
@@ -129,7 +252,7 @@ const RecurringPayments = () => {
         <List sx={{ '& > *:not(:last-child)': { borderBottom: '1px solid rgba(0, 0, 0, 0.12)' } }}>
           {payments.map((payment) => (
             <ListItem
-              key={payment.id}
+              key={payment.subscriptionId}
               sx={{
                 py: 2,
                 px: 0,
@@ -140,10 +263,10 @@ const RecurringPayments = () => {
             >
               <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="h6" component="div">
-                  {payment.service}
+                  {`${payment.serviceName} - Amazon`}
                 </Typography>
                 <Typography variant="subtitle1" color="text.secondary">
-                  ${payment.amount.toFixed(2)}/mes
+                  ${payment.amount.toFixed(2)}/{payment.frequency}
                 </Typography>
               </Box>
               <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -151,24 +274,23 @@ const RecurringPayments = () => {
                   <Typography variant="body2" color="text.secondary">
                     {payment.description}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Próximo pago: {new Date(payment.nextPayment).toLocaleDateString()}
-                  </Typography>
+                  {payment.lastPaymentDay && (
+                    <Typography variant="body2" color="text.secondary">
+                      Próximo pago: {new Date(payment.lastPaymentDay).toLocaleDateString()}
+                    </Typography>
+                  )}
                 </Stack>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Chip
-                    label={payment.status}
-                    color="success"
+                    label={payment.status ? 'Activo' : 'Inactivo'}
+                    color={payment.status ? 'success' : 'default'}
                     size="small"
-                    sx={{ textTransform: 'lowercase' }}
+                    sx={{ textTransform: 'capitalize' }}
                   />
-                  <IconButton size="small" onClick={() => handleEditPayment(payment)}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => window.open(payment.website, '_blank')}>
+                  <IconButton size="small" onClick={() => window.open(payment.cancelUrl, '_blank')}>
                     <OpenInNewIcon fontSize="small" />
                   </IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDeletePayment(payment.id)}>
+                  <IconButton size="small" color="error" onClick={() => handleDeletePayment(payment.id!)}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
@@ -186,14 +308,14 @@ const RecurringPayments = () => {
           <TextField
             fullWidth
             label="Servicio"
-            value={editingPayment?.service || ''}
-            onChange={(e) => setEditingPayment(prev => prev ? { ...prev, service: e.target.value } : null)}
+            value={editingPayment?.serviceName || ''}
+            onChange={(e) => setEditingPayment(prev => prev ? { ...prev, serviceName: e.target.value } : null)}
             margin="normal"
             required
           />
           <TextField
             fullWidth
-            label="Monto Mensual"
+            label="Monto"
             type="number"
             value={editingPayment?.amount || ''}
             onChange={(e) => setEditingPayment(prev => prev ? { ...prev, amount: Number(e.target.value) } : null)}
@@ -202,41 +324,71 @@ const RecurringPayments = () => {
           />
           <TextField
             fullWidth
-            label="Próximo Pago"
-            type="date"
-            value={editingPayment?.nextPayment || ''}
-            onChange={(e) => setEditingPayment(prev => prev ? { ...prev, nextPayment: e.target.value } : null)}
+            label="URL de Cancelación"
+            value={editingPayment?.cancelUrl || ''}
+            onChange={(e) => setEditingPayment(prev => prev ? { ...prev, cancelUrl: e.target.value } : null)}
             margin="normal"
             required
-            InputLabelProps={{ shrink: true }}
           />
           <TextField
             fullWidth
-            label="Sitio Web"
-            value={editingPayment?.website || ''}
-            onChange={(e) => setEditingPayment(prev => prev ? { ...prev, website: e.target.value } : null)}
+            label="Fecha del Último Pago"
+            type="date"
+            value={editingPayment?.lastPaymentDay || new Date().toISOString().split('T')[0]}
+            onChange={(e) => setEditingPayment(prev => prev ? { ...prev, lastPaymentDay: e.target.value } : null)}
             margin="normal"
+            InputLabelProps={{
+              shrink: true,
+            }}
           />
+          <TextField
+            select
+            fullWidth
+            label="Frecuencia"
+            value={editingPayment?.frequency || 'mensual'}
+            onChange={(e) => setEditingPayment(prev => prev ? { ...prev, frequency: e.target.value as 'mensual' | 'yearly' } : null)}
+            margin="normal"
+          >
+            <MenuItem value="mensual">Mensual</MenuItem>
+            <MenuItem value="yearly">Anual</MenuItem>
+          </TextField>
           <TextField
             fullWidth
             label="Descripción"
             value={editingPayment?.description || ''}
             onChange={(e) => setEditingPayment(prev => prev ? { ...prev, description: e.target.value } : null)}
             margin="normal"
+            multiline
+            rows={2}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setIsDialogOpen(false);
-            setEditingPayment(null);
-          }}>
-            Cancelar
-          </Button>
+          <Button onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
           <Button onClick={handleSavePayment} variant="contained">
             Guardar
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar 
+        open={!!error} 
+        autoHideDuration={6000} 
+        onClose={() => setError(null)}
+      >
+        <Alert severity="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={() => setSuccessMessage(null)}
+      >
+        <Alert severity="success" onClose={() => setSuccessMessage(null)}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

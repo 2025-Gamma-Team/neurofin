@@ -13,6 +13,7 @@ export interface User {
   firstName: string;
   lastName: string;
   financialPersonality: string;
+  createdAt: string;
 }
 
 interface AuthState {
@@ -31,6 +32,8 @@ interface AuthState {
   ) => Promise<void>;
   logout: () => void;
   setError: (error: string | null) => void;
+  setToken: (token: string) => void;
+  clearToken: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -66,6 +69,7 @@ export const useAuthStore = create<AuthState>()(
                     session.getIdToken().payload[
                       "custom:financialPersonality"
                     ] || "",
+                  createdAt: new Date().toISOString(),
                 };
                 set({
                   user,
@@ -154,6 +158,8 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       setError: (error: string | null) => set({ error }),
+      setToken: (token: string) => set({ token }),
+      clearToken: () => set({ token: null }),
     }),
     {
       name: "auth-storage",
