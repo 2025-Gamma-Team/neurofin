@@ -6,6 +6,7 @@ import { TransactionsChart } from '../../components/TransactionsChart/Transactio
 import { Avatar } from '../../components/Avatar/Avatar';
 import { UserAvatar } from '../../components/UserAvatar/UserAvatar';
 import { ChatBot } from '../../components/ChatBot/ChatBot';
+import { useAuthStore } from '../../store/authStore';
 
 interface Transaction {
   date: string;
@@ -46,6 +47,7 @@ const mockTransactions: Transaction[] = [
 
 const Dashboard = () => {
   const theme = useTheme();
+  const { user } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
   const [financialHealth, setFinancialHealth] = useState<{
@@ -198,53 +200,16 @@ const Dashboard = () => {
                 <Box sx={{
                   width: 80,
                   height: 80,
-                  bgcolor: theme.palette.primary.main,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
                 }}>
-                  <AccountBalance sx={{ fontSize: 40, color: 'white' }} />
+                  <UserAvatar healthStatus={financialHealth.status} size={80} />
                 </Box>
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="h4" sx={headerStyle} gutterBottom>
-                    Bienvenido a NeuroFin
+                <Box>
+                  <Typography variant="h4" sx={headerStyle}>
+                    Bienvenido {user ? `${user.firstName} ${user.lastName}` : ''} a NeuroFin
                   </Typography>
-                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }} gutterBottom>
-                    Tu plataforma de gestión financiera personal.
+                  <Typography variant="subtitle1" color="text.secondary">
+                    {locationInfo?.country || 'Cargando ubicación...'}
                   </Typography>
-                  {locationInfo && (
-                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      <Chip
-                        icon={<LocationOn />}
-                        label={locationInfo.country}
-                        sx={{ 
-                          bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
-                          color: theme.palette.text.primary,
-                          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.5)' : 'rgba(76, 175, 80, 0.3)'}` 
-                        }}
-                        size="small"
-                      />
-                      <Chip
-                        label={`Moneda: ${locationInfo.currency}`}
-                        sx={{ 
-                          bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
-                          color: theme.palette.text.primary,
-                          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.5)' : 'rgba(76, 175, 80, 0.3)'}` 
-                        }}
-                        size="small"
-                      />
-                      <Chip
-                        label={`Zona: ${locationInfo.timezone}`}
-                        sx={{ 
-                          bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
-                          color: theme.palette.text.primary,
-                          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.5)' : 'rgba(76, 175, 80, 0.3)'}` 
-                        }}
-                        size="small"
-                      />
-                    </Box>
-                  )}
                 </Box>
               </Box>
             </CardContent>
@@ -270,10 +235,12 @@ const Dashboard = () => {
                   gap: 1
                 }}>
                   <Typography variant="h4" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
-                    Juan Pérez
+                    {user ? `${user.firstName} ${user.lastName}` : 'Usuario'}
                   </Typography>
                   <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                    Miembro desde 2024
+                    {user?.createdAt 
+                      ? `Miembro desde ${new Date(user.createdAt).getFullYear()}`
+                      : 'Miembro nuevo'}
                   </Typography>
                 </Box>
                 <Box sx={{
@@ -295,13 +262,13 @@ const Dashboard = () => {
                     borderRadius: 2
                   }}>
                     <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                      Correo: juan.perez@example.com
+                      Correo: {user?.email || '-'}
                     </Typography>
                     <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                      Teléfono: +34 123 456 789
+                      Nombre: {user?.firstName} {user?.lastName}
                     </Typography>
                     <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                      País: España
+                      Usuario: {user?.email?.split('@')[0] || '-'} 
                     </Typography>
                   </Box>
                 </Box>
