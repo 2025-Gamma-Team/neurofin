@@ -176,15 +176,30 @@ export default function Register() {
             Crear Cuenta
           </Typography>
 
-          <Stepper activeStep={activeStep} sx={{ width: '100%', mb: 4 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>
-                  <Typography color="white">{label}</Typography>
-                </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
+          <Box sx={{ width: '100%', mb: 4 }}>
+            <Typography variant="h6" sx={{ color: "white", mb: 2, textAlign: "center" }}>
+              {steps[activeStep]}
+            </Typography>
+            <Stepper activeStep={activeStep} sx={{ width: '100%' }}>
+              {steps.map((_, index) => (
+                <Step key={index}>
+                  <StepLabel StepIconProps={{
+                    sx: {
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      '&.Mui-active': {
+                        color: 'primary.main',
+                      },
+                      '&.Mui-completed': {
+                        color: 'primary.main',
+                      },
+                    }
+                  }}>
+                    {/* Dejamos el label vacío para solo mostrar los círculos numerados */}
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
         </Box>
 
         {showConfirmation ? (
