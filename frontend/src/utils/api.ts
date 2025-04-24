@@ -14,22 +14,39 @@ api.interceptors.request.use(
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // Agregar logs para debugging
+      console.log('Token agregado a la petición:', token);
+      console.log('URL de la petición:', config.url);
+      console.log('Headers completos:', config.headers);
+    } else {
+      console.warn('No se encontró token en el store');
+      // Si no hay token, redirigir al login
+      window.location.href = "/login";
+      return Promise.reject("No token found");
     }
     return config;
   },
   (error) => {
+    console.error('Error en el interceptor de request:', error);
     return Promise.reject(error);
   }
 );
 
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log para debugging
+    console.log('Respuesta exitosa:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
-      // Usar el store para hacer logout
+      console.log('Error 401 detectado - Iniciando logout');
       useAuthStore.getState().logout();
-      // Redirigir al login
       window.location.href = "/login";
     }
     return Promise.reject(error);
