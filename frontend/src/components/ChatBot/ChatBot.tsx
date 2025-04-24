@@ -98,7 +98,6 @@ const getAIResponse = async (message: string): Promise<any> => {
     language: "es"
   };
   const response = await api.post('/chat', messagePayload)
-  console.log(response.data.body)
   return JSON.parse(response.data.body).advisorResponse
 };
 
@@ -165,7 +164,6 @@ export const ChatBot: React.FC = () => {
 
     // Simular delay de respuesta
     const response = await getAIResponse(inputMessage);
-    console.log(response);
     
     
     setMessages(prev => [
