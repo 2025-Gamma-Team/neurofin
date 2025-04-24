@@ -20,11 +20,13 @@ import { useAuthStore } from "../store/authStore";
 import backgroundImage from "../assets/background.jpg";
 import neuroLogo from "../assets/neuro.jpeg";
 import FinancialPersonalityQuiz from "../components/FinancialPersonalityQuiz";
+import ConfirmSignUp from "../components/ConfirmSignUp";
 
 export default function Register() {
   const navigate = useNavigate();
   const { register, isLoading, error, setError } = useAuthStore();
   const [activeStep, setActiveStep] = useState(0);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -34,7 +36,7 @@ export default function Register() {
     financialPersonality: "",
   });
 
-  const steps = ['Información Personal', 'Cuestionario de Personalidad'];
+  const steps = ['Información Personal', 'Cuestionario de Personalidad', 'Confirmación'];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -74,15 +76,20 @@ export default function Register() {
         formData.password,
         formData.financialPersonality
       );
-      navigate("/login", { 
-        state: { 
-          message: "Registro exitoso. Por favor inicia sesión.",
-          personality: formData.financialPersonality 
-        } 
-      });
+      setShowConfirmation(true);
+      setActiveStep(2);
     } catch (err) {
       console.error("Error de registro:", err);
     }
+  };
+
+  const handleConfirmationComplete = () => {
+    navigate("/login", { 
+      state: { 
+        message: "Registro confirmado exitosamente. Por favor inicia sesión.",
+        personality: formData.financialPersonality 
+      } 
+    });
   };
 
   return (
@@ -180,7 +187,9 @@ export default function Register() {
           </Stepper>
         </Box>
 
-        {activeStep === 0 ? (
+        {showConfirmation ? (
+          <ConfirmSignUp email={formData.email} onComplete={handleConfirmationComplete} />
+        ) : activeStep === 0 ? (
           <Box
             component="form"
             onSubmit={handleNext}
@@ -191,7 +200,7 @@ export default function Register() {
             }}
           >
             <Box sx={{ position: "relative" }}>
-              <Badge
+              <Person
                 sx={{
                   position: "absolute",
                   left: 8,
@@ -225,7 +234,7 @@ export default function Register() {
             </Box>
 
             <Box sx={{ position: "relative" }}>
-              <Badge
+              <Person
                 sx={{
                   position: "absolute",
                   left: 8,
