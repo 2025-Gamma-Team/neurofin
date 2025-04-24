@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -21,6 +21,22 @@ const appear = keyframes`
   100% { transform: scale(1); opacity: 1; }
 `;
 
+// Animación para el mazo
+const hammerSwing = keyframes`
+  0% { 
+    transform: translate(-30%, -100%) rotate(-45deg);
+    opacity: 1;
+  }
+  50% { 
+    transform: translate(-30%, -20%) rotate(15deg);
+    opacity: 1;
+  }
+  100% { 
+    transform: translate(-30%, -20%) rotate(0deg);
+    opacity: 0;
+  }
+`;
+
 // Posiciones fijas para los topos
 const MOLE_POSITIONS = [
   { x: 20, y: 60 },
@@ -38,6 +54,30 @@ const Game = () => {
   const [showMessage, setShowMessage] = useState(false);
   const [visibleMoles, setVisibleMoles] = useState(Array(4).fill(false));
   const [canClickMoles, setCanClickMoles] = useState(Array(4).fill(true));
+  const [score, setScore] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [hammerPosition, setHammerPosition] = useState<{ index: number; show: boolean }>({ index: -1, show: false });
+  
+  // Usar useRef para mantener la referencia del audio
+  const hitSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Cargar el sonido cuando el componente se monta
+  useEffect(() => {
+    hitSoundRef.current = new Audio('/pow.mp3');
+    if (hitSoundRef.current) {
+      hitSoundRef.current.volume = 1.0;
+      hitSoundRef.current.load();
+    }
+  }, []);
+
+  const playHitSound = () => {
+    if (hitSoundRef.current) {
+      hitSoundRef.current.currentTime = 0;
+      hitSoundRef.current.play().catch(error => {
+        console.error('Error reproduciendo sonido:', error);
+      });
+    }
+  };
 
   const showRandomMole = useCallback(() => {
     const availableMoles = visibleMoles.map((visible, index) => !visible ? index : -1).filter(index => index !== -1);
@@ -61,6 +101,8 @@ const Game = () => {
           newState[randomIndex] = false;
           return newState;
         });
+        // Reiniciar el combo si no se atrapó el topo
+        setCombo(0);
       }, Math.random() * 1500 + 1000);
     }
   }, [visibleMoles]);
@@ -75,19 +117,39 @@ const Game = () => {
 
   const handleMoleClick = (index: number) => {
     if (canClickMoles[index] && visibleMoles[index]) {
-      setCanClickMoles(prev => {
-        const newState = [...prev];
-        newState[index] = false;
-        return newState;
-      });
-      setVisibleMoles(prev => {
-        const newState = [...prev];
-        newState[index] = false;
-        return newState;
-      });
-      setMoney(prev => prev + 50);
+      // Reproducir sonido
+      playHitSound();
+
+      // Mostrar el mazo
+      setHammerPosition({ index, show: true });
+      
+      // Retrasar la desaparición del topo
+      setTimeout(() => {
+        setCanClickMoles(prev => {
+          const newState = [...prev];
+          newState[index] = false;
+          return newState;
+        });
+        setVisibleMoles(prev => {
+          const newState = [...prev];
+          newState[index] = false;
+          return newState;
+        });
+      }, 400);
+
+      // Ocultar el mazo después de la animación
+      setTimeout(() => {
+        setHammerPosition({ index: -1, show: false });
+      }, 800);
+
+      // Incrementar combo y calcular puntos
+      const newCombo = combo + 1;
+      setCombo(newCombo);
+      const points = 50 * newCombo;
+      setScore(prev => prev + points);
+      setMoney(prev => prev + points);
       setHappiness(prev => Math.min(100, prev + 5));
-      showNotification('¡Atrapaste al topo! +50 pesos 🎯');
+      showNotification(`¡Atrapaste al topo! +${points} puntos (x${newCombo} combo) 🎯`);
     }
   };
 
@@ -133,9 +195,30 @@ const Game = () => {
 
   return (
     <Box sx={{ p: 3, textAlign: 'center' }}>
-      <Typography variant="h4" gutterBottom sx={{ color: '#2196f3', fontWeight: 'bold', mb: 4 }}>
-        ¡Atrapa al Topo Financiero!
-      </Typography>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        mb: 4 
+      }}>
+        <Typography variant="h4" sx={{ color: '#2196f3', fontWeight: 'bold' }}>
+          ¡Atrapa al Topo Financiero!
+        </Typography>
+        <Paper sx={{ 
+          p: 2, 
+          background: 'linear-gradient(45deg, #FF6B6B 30%, #FF8E53 90%)',
+          minWidth: 200
+        }}>
+          <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
+            Puntos: {score}
+          </Typography>
+          {combo > 1 && (
+            <Typography variant="subtitle1" sx={{ color: 'white' }}>
+              Combo x{combo}! 🔥
+            </Typography>
+          )}
+        </Paper>
+      </Box>
 
       <Box sx={{ 
         display: 'flex', 
@@ -168,6 +251,23 @@ const Game = () => {
                   filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',
                   transform: canClickMoles[index] ? 'scale(1)' : 'scale(0)',
                   transition: 'transform 0.3s ease-out',
+                }}
+              />
+            )}
+            {hammerPosition.show && hammerPosition.index === index && (
+              <img
+                src="/maz.png"
+                alt="Mazo"
+                style={{
+                  width: '100px',
+                  height: '100px',
+                  position: 'absolute',
+                  top: '0%',
+                  left: '70%',
+                  transformOrigin: 'bottom center',
+                  animation: `${hammerSwing} 0.8s ease-in`,
+                  zIndex: 9999,
+                  pointerEvents: 'none',
                 }}
               />
             )}
