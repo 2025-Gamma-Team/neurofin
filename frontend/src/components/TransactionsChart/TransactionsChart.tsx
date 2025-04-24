@@ -15,10 +15,11 @@ import { Paper, Typography, Box, useTheme } from '@mui/material';
 import { TrendingUp, TrendingDown, Savings } from '@mui/icons-material';
 
 interface Transaction {
-  date: string;
-  description: string;
+  id: number;
+  name: string;
   amount: number;
-  type: 'ingreso' | 'gasto';
+  type: 'ingreso' | 'egreso';
+  date: string;
 }
 
 interface TransactionsChartProps {
@@ -29,7 +30,7 @@ interface TransactionsChartProps {
 interface ChartData {
   date: string;
   ingresos: number;
-  gastos: number;
+  egresos: number;
   balance: number;
 }
 
@@ -44,14 +45,14 @@ export const TransactionsChart: React.FC<TransactionsChartProps> = ({ transactio
       if (transaction.type === 'ingreso') {
         existingDate.ingresos += transaction.amount;
       } else {
-        existingDate.gastos += transaction.amount;
+        existingDate.egresos += transaction.amount;
       }
-      existingDate.balance = existingDate.ingresos - existingDate.gastos;
+      existingDate.balance = existingDate.ingresos - existingDate.egresos;
     } else {
       acc.push({
         date: transaction.date,
         ingresos: transaction.type === 'ingreso' ? transaction.amount : 0,
-        gastos: transaction.type === 'gasto' ? transaction.amount : 0,
+        egresos: transaction.type === 'egreso' ? transaction.amount : 0,
         balance: transaction.type === 'ingreso' ? transaction.amount : -transaction.amount
       });
     }
@@ -61,7 +62,7 @@ export const TransactionsChart: React.FC<TransactionsChartProps> = ({ transactio
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: 'MXN',
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
@@ -69,9 +70,9 @@ export const TransactionsChart: React.FC<TransactionsChartProps> = ({ transactio
 
   const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
     if (active && payload && payload.length) {
-      const ingreso = (payload.find(p => p.name === 'Dinero que entró')?.value as number) || 0;
-      const gasto = (payload.find(p => p.name === 'Deudas y gastos')?.value as number) || 0;
-      const balance = ingreso - gasto;
+      const ingreso = (payload.find(p => p.name === 'Ingresos')?.value as number) || 0;
+      const egreso = (payload.find(p => p.name === 'Egresos')?.value as number) || 0;
+      const balance = ingreso - egreso;
 
       return (
         <Paper
@@ -90,19 +91,19 @@ export const TransactionsChart: React.FC<TransactionsChartProps> = ({ transactio
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <TrendingUp sx={{ color: theme.palette.success.main }} />
             <Typography variant="body2" sx={{ color: theme.palette.success.main, display: 'flex', alignItems: 'center' }}>
-              Dinero que entró: <Box component="span" sx={{ ml: 1, fontSize: '1.1em' }}>{formatCurrency(ingreso)}</Box>
+              Ingresos: <Box component="span" sx={{ ml: 1, fontSize: '1.1em' }}>{formatCurrency(ingreso)}</Box>
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <TrendingDown sx={{ color: theme.palette.error.main }} />
             <Typography variant="body2" sx={{ color: theme.palette.error.main, display: 'flex', alignItems: 'center' }}>
-              Deudas y gastos: <Box component="span" sx={{ ml: 1, fontSize: '1.1em' }}>{formatCurrency(gasto)}</Box>
+              Egresos: <Box component="span" sx={{ ml: 1, fontSize: '1.1em' }}>{formatCurrency(egreso)}</Box>
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1, borderTop: `1px solid ${theme.palette.divider}` }}>
             <Savings sx={{ color: balance >= 0 ? theme.palette.success.main : theme.palette.error.main }} />
             <Typography variant="body2" sx={{ color: balance >= 0 ? theme.palette.success.main : theme.palette.error.main, display: 'flex', alignItems: 'center' }}>
-              Lo que quedó: <Box component="span" sx={{ ml: 1, fontSize: '1.1em', fontWeight: 'bold' }}>{formatCurrency(balance)}</Box>
+              Balance: <Box component="span" sx={{ ml: 1, fontSize: '1.1em', fontWeight: 'bold' }}>{formatCurrency(balance)}</Box>
             </Typography>
           </Box>
         </Paper>
@@ -123,16 +124,16 @@ export const TransactionsChart: React.FC<TransactionsChartProps> = ({ transactio
       }}
     >
       <Typography variant="h6" gutterBottom align="center" sx={{ mb: 3 }}>
-        ¿Cómo va mi dinero? 💰
+        Movimientos Mensuales 💰
       </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <TrendingUp sx={{ color: theme.palette.success.main, fontSize: 28 }} />
-          <Typography sx={{ color: theme.palette.text.primary }}>Dinero que entró</Typography>
+          <Typography sx={{ color: theme.palette.text.primary }}>Ingresos</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <TrendingDown sx={{ color: theme.palette.error.main, fontSize: 28 }} />
-          <Typography sx={{ color: theme.palette.text.primary }}>Deudas y gastos</Typography>
+          <Typography sx={{ color: theme.palette.text.primary }}>Egresos</Typography>
         </Box>
       </Box>
       <ResponsiveContainer width="100%" height="75%">
@@ -160,13 +161,13 @@ export const TransactionsChart: React.FC<TransactionsChartProps> = ({ transactio
           <ReferenceLine y={0} stroke={theme.palette.divider} strokeDasharray="3 3" />
           <Bar
             dataKey="ingresos"
-            name="Dinero que entró"
+            name="Ingresos"
             fill={theme.palette.success.main}
             radius={[4, 4, 0, 0]}
           />
           <Bar
-            dataKey="gastos"
-            name="Deudas y gastos"
+            dataKey="egresos"
+            name="Egresos"
             fill={theme.palette.error.main}
             radius={[4, 4, 0, 0]}
           />
