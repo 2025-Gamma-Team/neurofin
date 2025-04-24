@@ -23,6 +23,7 @@ import {
   Psychology,
   AutoFixHigh
 } from '@mui/icons-material';
+import api from '@/utils/api';
 
 interface ChatMessage {
   text: string;
@@ -89,26 +90,15 @@ const financialTips = {
   ]
 };
 
-const getAIResponse = async (message: string): Promise<string> => {
+const getAIResponse = async (message: string): Promise<any> => {
   // Aquí iría la lógica de conexión con la IA
   // Por ahora simulamos respuestas basadas en palabras clave
-  const lowerMessage = message.toLowerCase();
-  
-  if (lowerMessage.includes('autismo') || lowerMessage.includes('tea')) {
-    const randomTip = financialTips.autism[Math.floor(Math.random() * financialTips.autism.length)];
-    return `Entiendo que tienes TEA. ${randomTip} ¿Te gustaría que te explique más sobre cómo implementar esta estrategia?`;
-  }
-  
-  if (lowerMessage.includes('tda') || lowerMessage.includes('tdah') || lowerMessage.includes('adhd')) {
-    const randomTip = financialTips.adhd[Math.floor(Math.random() * financialTips.adhd.length)];
-    return `Comprendo que tienes TDA/TDAH. ${randomTip} ¿Quieres que profundicemos en esta técnica?`;
-  }
-
-  if (lowerMessage.includes('ayuda') || lowerMessage.includes('consejo')) {
-    return "Estoy aquí para ayudarte. ¿Podrías decirme si tienes TEA o TDA/TDAH? Así podré darte consejos más específicos para tu situación.";
-  }
-
-  return "Estoy aquí para ayudarte con tus finanzas de una manera que se adapte a ti. ¿Te gustaría contarme más sobre tus necesidades específicas?";
+  const messagePayload = {
+    userMessage: message.toLowerCase(),
+    language: "es"
+  };
+  const response = await api.post('/chat', messagePayload)
+  return JSON.parse(response.data.body).advisorResponse
 };
 
 export const ChatBot: React.FC = () => {
@@ -174,6 +164,7 @@ export const ChatBot: React.FC = () => {
 
     // Simular delay de respuesta
     const response = await getAIResponse(inputMessage);
+    
     
     setMessages(prev => [
       ...prev.filter(msg => !msg.isLoading),

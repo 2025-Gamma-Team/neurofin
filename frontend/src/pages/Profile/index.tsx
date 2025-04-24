@@ -57,6 +57,7 @@ import {
 } from '@mui/icons-material';
 import { jwtDecode } from "jwt-decode";
 import api from "../../utils/api";
+import { AxiosError } from 'axios';
 
 interface BalanceEntry {
   id: number;
@@ -186,29 +187,38 @@ export default function Profile() {
   const fetchBalanceEntries = async () => {
     try {
       const userId = getUserIdFromToken();
-      console.log('Fetching balance for userId:', userId);
-      
       if (!userId) {
         throw new Error('No se pudo obtener el userId');
       }
 
       const response = await api.get(`/balance/${userId}`);
-      console.log('API Response:', response.data);
-      
       const parsedBody = JSON.parse(response.data.body);
       
       if (parsedBody.success && Array.isArray(parsedBody.data)) {
-        const formattedEntries: BalanceEntry[] = parsedBody.data.map((entry: APIBalanceEntry) => ({
+        const formattedTransactions: BalanceEntry[] = parsedBody.data.map((entry: APIBalanceEntry) => ({
           id: Date.now() + Math.random(),
           name: entry.name,
           type: entry.income ? 'ingreso' : 'egreso',
           amount: Number(entry.amount),
-          date: entry.date
+          date: entry.date // Asegurarnos de que guardamos la fecha exacta que viene del servidor
         }));
-        setBalanceList(formattedEntries);
+
+        console.log('Transacciones formateadas:', formattedTransactions);
+        setBalanceList(formattedTransactions);
+
+        // Calcular totales
+        const incomeTotal = formattedTransactions
+          .filter(t => t.type === 'ingreso')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const expensesTotal = formattedTransactions
+          .filter(t => t.type === 'egreso')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        setBalanceTotal(incomeTotal - expensesTotal);
       }
     } catch (error) {
-      console.error('Error al cargar los movimientos:', error);
+      console.error('Error al cargar las transacciones:', error);
     }
   };
 
@@ -464,13 +474,40 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteBalance = async (id: number) => {
+  const handleDeleteBalance = async (id: number, date: string) => {
     try {
-      await api.delete(`/balance/${id}`);
-      // Actualizar la lista de movimientos
+      const userId = getUserIdFromToken();
+      if (!userId) {
+        throw new Error('No se pudo obtener el userId');
+      }
+
+      // Asegurarnos de que la fecha esté en formato ISO
+      const isoDate = new Date(date).toISOString();
+      
+      console.log('Eliminando movimiento:', { 
+        userId, 
+        date,
+        isoDate,
+        url: `/balance/${userId}/${isoDate}`
+      });
+
+      const response = await api.delete(`/balance/${userId}/${isoDate}`);
+      console.log('Respuesta del servidor:', response.data);
+      
+      // Actualizar la lista de movimientos después de eliminar
       await fetchBalanceEntries();
     } catch (error) {
-      console.error('Error al eliminar el movimiento:', error);
+      if (error instanceof AxiosError) {
+        console.error('Error al eliminar el movimiento:', error.message);
+        if (error.response) {
+          console.error('Detalles del error:', {
+            status: error.response.status,
+            data: error.response.data
+          });
+        }
+      } else {
+        console.error('Error inesperado:', error);
+      }
     }
   };
 
@@ -716,7 +753,7 @@ export default function Profile() {
                 <ListItem
                   key={item.id}
                   secondaryAction={
-                    <IconButton edge="end" onClick={() => handleDeleteBalance(item.id)}>
+                    <IconButton edge="end" onClick={() => handleDeleteBalance(item.id, item.date)}>
                       <DeleteIcon />
                     </IconButton>
                   }
