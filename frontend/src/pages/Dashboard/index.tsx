@@ -7,12 +7,31 @@ import { Avatar } from '../../components/Avatar/Avatar';
 import { UserAvatar } from '../../components/UserAvatar/UserAvatar';
 import { ChatBot } from '../../components/ChatBot/ChatBot';
 import { useAuthStore } from '../../store/authStore';
+import { jwtDecode } from "jwt-decode";
+import api from "../../utils/api";
 
 interface Transaction {
-  date: string;
-  description: string;
+  id: number;
+  name: string;
   amount: number;
-  type: 'ingreso' | 'gasto';
+  type: 'ingreso' | 'egreso';
+  date: string;
+}
+
+interface APIBalanceEntry {
+  userId: string;
+  amount: number;
+  income: boolean;
+  name: string;
+  date: string;
+}
+
+interface DecodedToken {
+  sub: string;
+  email: string;
+  'cognito:username': string;
+  exp: number;
+  iat: number;
 }
 
 interface LocationInfo {
@@ -26,30 +45,35 @@ interface LocationInfo {
 }
 
 const mockTransactions: Transaction[] = [
-  { date: '01/01/2024', description: 'Salario', amount: 3000, type: 'ingreso' },
-  { date: '02/01/2024', description: 'Supermercado', amount: 150, type: 'gasto' },
-  { date: '03/01/2024', description: 'Gasolina', amount: 50, type: 'gasto' },
-  { date: '05/01/2024', description: 'Netflix', amount: 15, type: 'gasto' },
-  { date: '10/01/2024', description: 'Freelance', amount: 500, type: 'ingreso' },
-  { date: '15/01/2024', description: 'Alquiler', amount: 800, type: 'gasto' },
-  { date: '20/01/2024', description: 'Luz', amount: 60, type: 'gasto' },
-  { date: '25/01/2024', description: 'Agua', amount: 40, type: 'gasto' },
-  { date: '28/01/2024', description: 'Inversión', amount: 200, type: 'ingreso' },
-  { date: '01/02/2024', description: 'Salario', amount: 3000, type: 'ingreso' },
-  { date: '02/02/2024', description: 'Supermercado', amount: 180, type: 'gasto' },
-  { date: '05/02/2024', description: 'Gimnasio', amount: 30, type: 'gasto' },
-  { date: '10/02/2024', description: 'Freelance', amount: 400, type: 'ingreso' },
-  { date: '15/02/2024', description: 'Alquiler', amount: 800, type: 'gasto' },
-  { date: '20/02/2024', description: 'Internet', amount: 45, type: 'gasto' },
-  { date: '25/02/2024', description: 'Gas', amount: 35, type: 'gasto' },
-  { date: '28/02/2024', description: 'Inversión', amount: 250, type: 'ingreso' },
+  { id: 1, date: '01/01/2024', name: 'Salario', amount: 3000, type: 'ingreso' },
+  { id: 2, date: '02/01/2024', name: 'Supermercado', amount: 150, type: 'egreso' },
+  { id: 3, date: '03/01/2024', name: 'Gasolina', amount: 50, type: 'egreso' },
+  { id: 4, date: '05/01/2024', name: 'Netflix', amount: 15, type: 'egreso' },
+  { id: 5, date: '10/01/2024', name: 'Freelance', amount: 500, type: 'ingreso' },
+  { id: 6, date: '15/01/2024', name: 'Alquiler', amount: 800, type: 'egreso' },
+  { id: 7, date: '20/01/2024', name: 'Luz', amount: 60, type: 'egreso' },
+  { id: 8, date: '25/01/2024', name: 'Agua', amount: 40, type: 'egreso' },
+  { id: 9, date: '28/01/2024', name: 'Inversión', amount: 200, type: 'ingreso' },
+  { id: 10, date: '01/02/2024', name: 'Salario', amount: 3000, type: 'ingreso' },
+  { id: 11, date: '02/02/2024', name: 'Supermercado', amount: 180, type: 'egreso' },
+  { id: 12, date: '05/02/2024', name: 'Gimnasio', amount: 30, type: 'egreso' },
+  { id: 13, date: '10/02/2024', name: 'Freelance', amount: 400, type: 'ingreso' },
+  { id: 14, date: '15/02/2024', name: 'Alquiler', amount: 800, type: 'egreso' },
+  { id: 15, date: '20/02/2024', name: 'Internet', amount: 45, type: 'egreso' },
+  { id: 16, date: '25/02/2024', name: 'Gas', amount: 35, type: 'egreso' },
+  { id: 17, date: '28/02/2024', name: 'Inversión', amount: 250, type: 'ingreso' }
 ];
 
 const Dashboard = () => {
   const theme = useTheme();
-  const { user } = useAuthStore();
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const { user, token } = useAuthStore();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [balance, setBalance] = useState(0);
+  const [topIncomes, setTopIncomes] = useState<{ name: string; amount: number }[]>([]);
+  const [topExpenses, setTopExpenses] = useState<{ name: string; amount: number }[]>([]);
   const [financialHealth, setFinancialHealth] = useState<{
     score: number;
     status: 'excelente' | 'buena' | 'regular' | 'mala';
@@ -59,6 +83,93 @@ const Dashboard = () => {
     status: 'regular',
     message: 'Cargando...'
   });
+
+  const getUserIdFromToken = (): string => {
+    if (!token) return '';
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      return decoded.sub || '';
+    } catch (error) {
+      console.error('Error decodificando token:', error);
+      return '';
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      const userId = getUserIdFromToken();
+      if (!userId) {
+        throw new Error('No se pudo obtener el userId');
+      }
+
+      const response = await api.get(`/balance/${userId}`);
+      const parsedBody = JSON.parse(response.data.body);
+      
+      if (parsedBody.success && Array.isArray(parsedBody.data)) {
+        const formattedTransactions: Transaction[] = parsedBody.data.map((entry: APIBalanceEntry) => ({
+          id: Date.now() + Math.random(),
+          name: entry.name,
+          type: entry.income ? 'ingreso' : 'egreso',
+          amount: Number(entry.amount),
+          date: entry.date
+        }));
+
+        setTransactions(formattedTransactions);
+
+        // Calcular totales
+        const incomeTotal = formattedTransactions
+          .filter(t => t.type === 'ingreso')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const expensesTotal = formattedTransactions
+          .filter(t => t.type === 'egreso')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        // Obtener los principales ingresos y egresos
+        const incomes = formattedTransactions
+          .filter(t => t.type === 'ingreso')
+          .reduce((acc, curr) => {
+            const existing = acc.find(item => item.name === curr.name);
+            if (existing) {
+              existing.amount += curr.amount;
+            } else {
+              acc.push({ name: curr.name, amount: curr.amount });
+            }
+            return acc;
+          }, [] as { name: string; amount: number }[])
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 2);
+
+        const expenses = formattedTransactions
+          .filter(t => t.type === 'egreso')
+          .reduce((acc, curr) => {
+            const existing = acc.find(item => item.name === curr.name);
+            if (existing) {
+              existing.amount += curr.amount;
+            } else {
+              acc.push({ name: curr.name, amount: curr.amount });
+            }
+            return acc;
+          }, [] as { name: string; amount: number }[])
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 2);
+
+        setTopIncomes(incomes);
+        setTopExpenses(expenses);
+        setTotalIncome(incomeTotal);
+        setTotalExpenses(expensesTotal);
+        setBalance(incomeTotal - expensesTotal);
+      }
+    } catch (error) {
+      console.error('Error al cargar las transacciones:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchTransactions();
+    }
+  }, [token]);
 
   useEffect(() => {
     // Obtener información de ubicación
@@ -95,16 +206,8 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    // Calcular salud financiera basada en las transacciones
+    // Calcular salud financiera basada en las transacciones reales
     const calculateFinancialHealth = () => {
-      const totalIncome = transactions
-        .filter(t => t.type === 'ingreso')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const totalExpenses = transactions
-        .filter(t => t.type === 'gasto')
-        .reduce((sum, t) => sum + t.amount, 0);
-
       const savingsRate = totalIncome > 0 ? (totalIncome - totalExpenses) / totalIncome : 0;
 
       let status: 'excelente' | 'buena' | 'regular' | 'mala';
@@ -132,7 +235,7 @@ const Dashboard = () => {
     };
 
     calculateFinancialHealth();
-  }, [transactions]);
+  }, [totalIncome, totalExpenses]);
 
   const getHealthColor = (status: string) => {
     switch (status) {
@@ -287,24 +390,38 @@ const Dashboard = () => {
 
               {/* Balance Total */}
               <Box id="balance-total" sx={{ 
-                bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)', 
+                bgcolor: balance >= 0 
+                  ? theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)'
+                  : theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.1)' : 'rgba(244, 67, 54, 0.05)', 
                 p: 4, 
                 borderRadius: 2,
-                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.15)'}`,
+                border: `1px solid ${
+                  balance >= 0
+                    ? theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.15)'
+                    : theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(244, 67, 54, 0.15)'
+                }`,
                 mb: 4
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                  <AccountBalance sx={{ color: theme.palette.success.main, fontSize: 32 }} />
-                  <Typography variant="h5" sx={{ color: theme.palette.success.main }}>
+                  <AccountBalance sx={{ 
+                    color: balance >= 0 ? theme.palette.success.main : theme.palette.error.main, 
+                    fontSize: 32 
+                  }} />
+                  <Typography variant="h5" sx={{ 
+                    color: balance >= 0 ? theme.palette.success.main : theme.palette.error.main 
+                  }}>
                     Balance Total
                   </Typography>
                 </Box>
-                <Typography variant="h2" sx={{ color: theme.palette.success.main, mb: 2 }}>
+                <Typography variant="h2" sx={{ 
+                  color: balance >= 0 ? theme.palette.success.main : theme.palette.error.main,
+                  mb: 2 
+                }}>
                   {new Intl.NumberFormat('es-MX', { 
                     style: 'currency', 
                     currency: locationInfo?.currency || 'MXN',
                     minimumFractionDigits: 2
-                  }).format(transactions.reduce((sum, t) => sum + (t.type === 'ingreso' ? t.amount : -t.amount), 0))}
+                  }).format(balance)}
                 </Typography>
                 <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                   Actualizado hace 2 horas
@@ -336,16 +453,18 @@ const Dashboard = () => {
                         style: 'currency', 
                         currency: locationInfo?.currency || 'MXN',
                         minimumFractionDigits: 2
-                      }).format(transactions.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + t.amount, 0))}
+                      }).format(totalIncome)}
                     </Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Salario</Typography>
-                      <Typography variant="body2" sx={{ color: theme.palette.success.main }}>$15000.00</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Freelance</Typography>
-                      <Typography variant="body2" sx={{ color: theme.palette.success.main }}>$5000.00</Typography>
-                    </Box>
+                    {topIncomes.map((income, index) => (
+                      <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                          {income.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: theme.palette.success.main }}>
+                          ${income.amount.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))}
                   </Box>
                 </Grid>
 
@@ -372,16 +491,18 @@ const Dashboard = () => {
                         style: 'currency', 
                         currency: locationInfo?.currency || 'MXN',
                         minimumFractionDigits: 2
-                      }).format(transactions.filter(t => t.type === 'gasto').reduce((sum, t) => sum + t.amount, 0))}
+                      }).format(totalExpenses)}
                     </Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Vivienda</Typography>
-                      <Typography variant="body2" sx={{ color: theme.palette.error.main }}>$5000.00</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>Alimentación</Typography>
-                      <Typography variant="body2" sx={{ color: theme.palette.error.main }}>$3000.00</Typography>
-                    </Box>
+                    {topExpenses.map((expense, index) => (
+                      <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                          {expense.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: theme.palette.error.main }}>
+                          ${expense.amount.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ))}
                   </Box>
                 </Grid>
               </Grid>
