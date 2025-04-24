@@ -5,7 +5,6 @@ import ExpensesChart from '../../components/ExpensesChart/ExpensesChart';
 import { TransactionsChart } from '../../components/TransactionsChart/TransactionsChart';
 import { Avatar } from '../../components/Avatar/Avatar';
 import { UserAvatar } from '../../components/UserAvatar/UserAvatar';
-import Map from '../../components/Map/Map';
 
 interface Transaction {
   date: string;
@@ -23,8 +22,6 @@ interface LocationInfo {
     lng: number;
   };
 }
-
-
 
 const mockTransactions: Transaction[] = [
   { date: '01/01/2024', description: 'Salario', amount: 3000, type: 'ingreso' },
@@ -266,26 +263,6 @@ const Dashboard = () => {
                 <Typography variant="h6" sx={headerStyle}>
                   Tu Avatar Financiero
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Chip
-                    size="small"
-                    label="Actualizar"
-                    sx={{ 
-                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
-                      color: theme.palette.text.primary,
-                      border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.5)' : 'rgba(76, 175, 80, 0.3)'}` 
-                    }}
-                  />
-                  <Chip
-                    size="small"
-                    label="Guardar"
-                    sx={{ 
-                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
-                      color: theme.palette.text.primary,
-                      border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.5)' : 'rgba(76, 175, 80, 0.3)'}` 
-                    }}
-                  />
-                </Box>
               </Box>
               <UserAvatar healthStatus={financialHealth.status} />
             </CardContent>
@@ -400,27 +377,6 @@ const Dashboard = () => {
                   </Box>
                 </Grid>
               </Grid>
-
-              {/* Mapa */}
-              <Box sx={{
-                height: 300,
-                width: '100%',
-                borderRadius: 2,
-                overflow: 'hidden',
-                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.15)'}`
-              }}>
-                {locationInfo && (
-                  <Map
-                    center={[19.4326, -99.1332]}
-                    markers={[
-                      {
-                        position: [19.4326, -99.1332],
-                        popup: "Sucursal Principal"
-                      }
-                    ]}
-                  />
-                )}
-              </Box>
             </CardContent>
           </Card>
         </Grid>
