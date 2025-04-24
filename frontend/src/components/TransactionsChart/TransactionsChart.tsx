@@ -15,10 +15,11 @@ import { Paper, Typography, Box, useTheme } from '@mui/material';
 import { TrendingUp, TrendingDown, Savings } from '@mui/icons-material';
 
 interface Transaction {
-  date: string;
-  description: string;
+  id: number;
+  name: string;
   amount: number;
-  type: 'ingreso' | 'gasto';
+  type: 'ingreso' | 'egreso';
+  date: string;
 }
 
 interface TransactionsChartProps {
@@ -51,7 +52,7 @@ export const TransactionsChart: React.FC<TransactionsChartProps> = ({ transactio
       acc.push({
         date: transaction.date,
         ingresos: transaction.type === 'ingreso' ? transaction.amount : 0,
-        gastos: transaction.type === 'gasto' ? transaction.amount : 0,
+        gastos: transaction.type === 'egreso' ? transaction.amount : 0,
         balance: transaction.type === 'ingreso' ? transaction.amount : -transaction.amount
       });
     }
