@@ -18,5 +18,6 @@ NeuroFin es una plataforma web y móvil de educación financiera personalizada p
 ### [Frontend](./frontend/README.md)
 <!-- ### [Shared]() TBD -->
 
-## Architecture
+## Video 
 
+[Mira este video en YouTube](https://www.youtube.com/watch?v=7l13SdPUyVs)
