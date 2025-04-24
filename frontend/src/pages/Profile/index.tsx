@@ -465,295 +465,83 @@ export default function Profile() {
               {/* Statistics Section */}
               <Grid item xs={12} md={8}>
                 <Box>
-                  <Typography variant="h6" gutterBottom sx={{
-                    color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                    fontWeight: 600,
-                    mb: 3
-                  }}>
-                    Resumen Financiero
-                  </Typography>
-
-                  <Grid container spacing={3}>
-                    {/* Balance Total Card */}
-                    <Grid item xs={12}>
-                      <Paper sx={{
-                        p: 3,
-                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(50, 205, 50, 0.1)' : 'rgba(27, 94, 32, 0.05)',
-                        border: '1px solid',
-                        borderColor: theme.palette.mode === 'dark' ? 'rgba(50, 205, 50, 0.3)' : 'rgba(27, 94, 32, 0.3)',
-                        borderRadius: 2,
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: '0 4px 20px rgba(50, 205, 50, 0.2)'
-                        }
-                      }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <AccountBalanceIcon sx={{
-                            color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                            mr: 1,
-                            fontSize: '2rem'
-                          }} />
-                          <Typography variant="subtitle1" sx={{
-                            color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                            fontWeight: 600
-                          }}>
-                            Balance Total
-                          </Typography>
-                        </Box>
-                        <Typography variant="h4" sx={{
-                          color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                          fontWeight: 700
-                        }}>
-                          ${balanceTotal.toFixed(2)} MXN
-                        </Typography>
-                        <Typography variant="body2" sx={{
-                          color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
-                          mt: 1
-                        }}>
-                          Actualizado hace 2 horas
-                        </Typography>
-                      </Paper>
-                    </Grid>
-
-                    {/* Ingresos Card */}
-                    <Grid item xs={12} sm={6}>
-                      <Paper sx={{
-                        p: 3,
-                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(50, 205, 50, 0.1)' : 'rgba(27, 94, 32, 0.05)',
-                        border: '1px solid',
-                        borderColor: theme.palette.mode === 'dark' ? 'rgba(50, 205, 50, 0.3)' : 'rgba(27, 94, 32, 0.3)',
-                        borderRadius: 2,
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: '0 4px 20px rgba(50, 205, 50, 0.2)'
-                        }
-                      }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <MoneyIcon sx={{
-                              color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                              mr: 1,
-                              fontSize: '2rem'
-                            }} />
-                            <Typography variant="subtitle1" sx={{
-                              color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                              fontWeight: 600
-                            }}>
-                              Ingresos Mensuales
-                            </Typography>
-                          </Box>
-                          <IconButton 
-                            onClick={handleIncomeOpen}
-                            sx={{ 
-                              color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                            }}
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </Box>
-                        <Typography variant="h4" sx={{
-                          color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                          fontWeight: 700
-                        }}>
-                          ${totalIncome.toFixed(2)} MXN
-                        </Typography>
-                        <Box sx={{ mt: 2 }}>
-                          {incomes.map((income) => (
-                            <Box key={income.id} sx={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              mb: 1,
-                              color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
-                            }}>
-                              <Typography variant="body2">{income.source}</Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="body2">${income.amount.toFixed(2)}</Typography>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDeleteIncome(income.id)}
-                                  sx={{ 
-                                    color: theme.palette.error.main,
-                                    padding: 0.5
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Box>
-                            </Box>
-                          ))}
-                        </Box>
-                      </Paper>
-                    </Grid>
-
-                    {/* Gastos Card */}
-                    <Grid item xs={12} sm={6}>
-                      <Paper sx={{
-                        p: 3,
-                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.1)' : 'rgba(183, 28, 28, 0.05)',
-                        border: '1px solid',
-                        borderColor: theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.3)' : 'rgba(183, 28, 28, 0.3)',
-                        borderRadius: 2,
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: '0 4px 20px rgba(244, 67, 54, 0.2)'
-                        }
-                      }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <RemoveIcon sx={{
-                              color: theme.palette.mode === 'dark' ? '#f44336' : '#b71c1c',
-                              mr: 1,
-                              fontSize: '2rem'
-                            }} />
-                            <Typography variant="subtitle1" sx={{
-                              color: theme.palette.mode === 'dark' ? '#f44336' : '#b71c1c',
-                              fontWeight: 600
-                            }}>
-                              Gastos Mensuales
-                            </Typography>
-                          </Box>
-                          <IconButton 
-                            onClick={handleExpenseOpen}
-                            sx={{ 
-                              color: theme.palette.mode === 'dark' ? '#f44336' : '#b71c1c',
-                            }}
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </Box>
-                        <Typography variant="h4" sx={{
-                          color: theme.palette.mode === 'dark' ? '#f44336' : '#b71c1c',
-                          fontWeight: 700
-                        }}>
-                          ${totalExpenses.toFixed(2)} MXN
-                        </Typography>
-                        <Box sx={{ mt: 2 }}>
-                          {expenses.map((expense) => (
-                            <Box key={expense.id} sx={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              mb: 1,
-                              color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
-                            }}>
-                              <Typography variant="body2">{expense.category}</Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="body2">${expense.amount.toFixed(2)}</Typography>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDeleteExpense(expense.id)}
-                                  sx={{ 
-                                    color: theme.palette.error.main,
-                                    padding: 0.5
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Box>
-                            </Box>
-                          ))}
-                        </Box>
-                      </Paper>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Grid>
-
-              {/* Personal Information Section */}
-              <Grid item xs={12} md={4}>
-                <Box>
-                  <Typography variant="h6" gutterBottom sx={{
-                    color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                    fontWeight: 600,
-                    mb: 3
-                  }}>
-                    Información Personal
-                  </Typography>
-                  <Paper sx={{
-                    p: 3,
-                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(38, 38, 38, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(50, 205, 50, 0.3)' : 'rgba(27, 94, 32, 0.3)',
-                    borderRadius: 2
-                  }}>
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="body2" sx={{
-                        color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
-                      }}>
-                        Nombre Completo
-                      </Typography>
-                      <Typography variant="body1" sx={{
-                        color: theme.palette.mode === 'dark' ? '#fff' : '#000',
-                        fontWeight: 500
-                      }}>
-                        {user?.firstName} {user?.lastName}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="body2" sx={{
-                        color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
-                      }}>
-                        Correo Electrónico
-                      </Typography>
-                      <Typography variant="body1" sx={{
-                        color: theme.palette.mode === 'dark' ? '#fff' : '#000',
-                        fontWeight: 500
-                      }}>
-                        {user?.email}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="body2" sx={{
-                        color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
-                      }}>
-                        Fecha de Registro
-                      </Typography>
-                      <Typography variant="body1" sx={{
-                        color: theme.palette.mode === 'dark' ? '#fff' : '#000',
-                        fontWeight: 500
-                      }}>
-                        15 de Marzo, 2024
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" sx={{
-                        color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
-                      }}>
-                        Último Acceso
-                      </Typography>
-                      <Typography variant="body1" sx={{
-                        color: theme.palette.mode === 'dark' ? '#fff' : '#000',
-                        fontWeight: 500
-                      }}>
-                        Hace 2 horas
-                      </Typography>
-                    </Box>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<EditIcon />}
-                      onClick={handleEditOpen}
-                      sx={{
-                        mt: 3,
-                        borderColor: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                        color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                        '&:hover': {
-                          borderColor: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
-                          bgcolor: 'rgba(50, 205, 50, 0.1)'
-                        }
-                      }}
-                    >
-                      Editar Información
-                    </Button>
-                  </Paper>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <AccountBalanceIcon sx={{
+                      color: theme.palette.mode === 'dark' ? '#32CD32' : '#1B5E20',
+                      mr: 1,
+                      fontSize: '2rem'
+                    }} />
+                  </Box>
                 </Box>
               </Grid>
             </Grid>
           </Paper>
+        </Grid>
+
+        {/* Avatar Customization Section */}
+        <Grid container spacing={3} sx={{ mt: 3 }}>
+          <Grid item xs={12}>
+            <Paper sx={{
+              p: 3,
+              bgcolor: theme.palette.mode === 'dark' ? 'rgba(38, 38, 38, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+              borderRadius: 2,
+              border: '1px solid rgba(50, 205, 50, 0.5)',
+              boxShadow: '0 0 10px rgba(50, 205, 50, 0.2)'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3
+              }}>
+                <Typography variant="h6" sx={{ color: theme.palette.success.main }}>
+                  Personalizar Avatar
+                </Typography>
+              </Box>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Estilo de pelo</InputLabel>
+                    <Select
+                      defaultValue="shortCombover"
+                      label="Estilo de pelo"
+                    >
+                      <MenuItem value="shortCombover">Corto con raya</MenuItem>
+                      <MenuItem value="longHair">Pelo largo</MenuItem>
+                      <MenuItem value="curlyHair">Pelo rizado</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Color de pelo</InputLabel>
+                    <Select
+                      defaultValue="brown"
+                      label="Color de pelo"
+                    >
+                      <MenuItem value="brown">Castaño</MenuItem>
+                      <MenuItem value="black">Negro</MenuItem>
+                      <MenuItem value="blonde">Rubio</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Color de piel</InputLabel>
+                    <Select
+                      defaultValue="light"
+                      label="Color de piel"
+                    >
+                      <MenuItem value="light">Clara</MenuItem>
+                      <MenuItem value="medium">Media</MenuItem>
+                      <MenuItem value="dark">Oscura</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Grid>
         </Grid>
       </Grid>
 

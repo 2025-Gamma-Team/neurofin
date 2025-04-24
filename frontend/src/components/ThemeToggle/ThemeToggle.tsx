@@ -14,12 +14,14 @@ export const ThemeToggle: React.FC = () => {
       color="inherit"
       sx={{
         position: 'fixed',
-        bottom: 16,
-        right: 16,
-        bgcolor: theme.palette.background.paper,
+        bottom: 24,
+        left: 24,
+        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 1300,
         boxShadow: theme.shadows[4],
         '&:hover': {
-          bgcolor: theme.palette.action?.hover,
+          bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
         },
       }}
     >

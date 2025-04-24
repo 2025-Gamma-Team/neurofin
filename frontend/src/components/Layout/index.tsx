@@ -109,7 +109,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             NeuroFin
           </Typography>
-          <ThemeToggle />
           <Button
             color="inherit"
             startIcon={<LogoutIcon />}
@@ -171,6 +170,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Toolbar />
         <Container maxWidth="lg">{children}</Container>
       </Box>
+      <ThemeToggle />
     </Box>
   );
 };
