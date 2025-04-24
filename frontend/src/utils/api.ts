@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuthStore } from "../store/authStore";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -10,7 +11,7 @@ const api = axios.create({
 // Interceptor para agregar el token a las peticiones
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,8 +27,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Si el token es inválido, limpiar el localStorage
-      localStorage.removeItem("auth-storage");
+      // Usar el store para hacer logout
+      useAuthStore.getState().logout();
       // Redirigir al login
       window.location.href = "/login";
     }

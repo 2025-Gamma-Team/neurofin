@@ -67,6 +67,7 @@ export default function Profile() {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [isCurrencyDialogOpen, setIsCurrencyDialogOpen] = useState(false);
+  const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -117,6 +118,18 @@ export default function Profile() {
     { icon: <MoneyIcon />, text: 'Moneda: MXN', color: '#4CAF50' },
     { icon: <LanguageIcon />, text: 'Zona: America/Mexico_City', color: '#2196F3' }
   ]);
+  const [newBalance, setNewBalance] = useState({
+    name: '',
+    type: 'ingreso',
+    amount: ''
+  });
+  const [balanceList, setBalanceList] = useState<Array<{
+    id: number;
+    name: string;
+    type: 'ingreso' | 'egreso';
+    amount: number;
+    date: string;
+  }>>([]);
 
   useEffect(() => {
     const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
@@ -327,6 +340,37 @@ export default function Profile() {
     });
     setUserBadges(updatedBadges);
     setIsCurrencyDialogOpen(false);
+  };
+
+  const handleBalanceOpen = () => {
+    setNewBalance({ name: '', type: 'ingreso', amount: '' });
+    setIsBalanceDialogOpen(true);
+  };
+
+  const handleBalanceClose = () => {
+    setIsBalanceDialogOpen(false);
+  };
+
+  const handleBalanceSave = () => {
+    if (!newBalance.name || !newBalance.amount) {
+      return;
+    }
+
+    const newEntry = {
+      id: Date.now(),
+      name: newBalance.name,
+      type: newBalance.type as 'ingreso' | 'egreso',
+      amount: Number(newBalance.amount),
+      date: new Date().toISOString()
+    };
+
+    setBalanceList([newEntry, ...balanceList]);
+    setIsBalanceDialogOpen(false);
+    setNewBalance({ name: '', type: 'ingreso', amount: '' });
+  };
+
+  const handleDeleteBalance = (id: number) => {
+    setBalanceList(balanceList.filter(item => item.id !== id));
   };
 
   return (
@@ -542,6 +586,51 @@ export default function Profile() {
               </Grid>
             </Paper>
           </Grid>
+        </Grid>
+
+        {/* Balance Section */}
+        <Grid item xs={12} md={6}>
+          <Paper
+            elevation={3}
+            sx={{
+              p: 3,
+              bgcolor: theme.palette.background.paper,
+              borderRadius: 2
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">Balance</Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleBalanceOpen}
+                sx={{ borderRadius: 2 }}
+              >
+                Agregar Movimiento
+              </Button>
+            </Box>
+
+            <List>
+              {balanceList.map((item) => (
+                <ListItem
+                  key={item.id}
+                  secondaryAction={
+                    <IconButton edge="end" onClick={() => handleDeleteBalance(item.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  }
+                >
+                  <ListItemIcon>
+                    {item.type === 'ingreso' ? <AddIcon color="success" /> : <RemoveIcon color="error" />}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.name}
+                    secondary={`${item.type === 'ingreso' ? '+' : '-'}$${item.amount.toLocaleString()}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
         </Grid>
       </Grid>
 
@@ -927,6 +1016,48 @@ export default function Profile() {
         <DialogActions>
           <Button onClick={handleCurrencyClose}>Cancelar</Button>
           <Button onClick={handleCurrencySave} variant="contained" color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Balance Dialog */}
+      <Dialog open={isBalanceDialogOpen} onClose={handleBalanceClose}>
+        <DialogTitle>Agregar Movimiento</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label="Nombre"
+              value={newBalance.name}
+              onChange={(e) => setNewBalance({ ...newBalance, name: e.target.value })}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>Tipo</InputLabel>
+              <Select
+                value={newBalance.type}
+                label="Tipo"
+                onChange={(e) => setNewBalance({ ...newBalance, type: e.target.value })}
+              >
+                <MenuItem value="ingreso">Ingreso</MenuItem>
+                <MenuItem value="egreso">Egreso</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Cantidad"
+              type="number"
+              value={newBalance.amount}
+              onChange={(e) => setNewBalance({ ...newBalance, amount: e.target.value })}
+              fullWidth
+              InputProps={{
+                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleBalanceClose}>Cancelar</Button>
+          <Button onClick={handleBalanceSave} variant="contained" color="primary">
             Guardar
           </Button>
         </DialogActions>
