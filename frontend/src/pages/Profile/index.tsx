@@ -55,9 +55,36 @@ import {
   Shield as ShieldIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
+import { jwtDecode } from "jwt-decode";
+import api from "../../utils/api";
+
+interface BalanceEntry {
+  id: number;
+  name: string;
+  type: 'ingreso' | 'egreso';
+  amount: number;
+  date: string;
+}
+
+interface APIBalanceEntry {
+  userId: string;
+  amount: number;
+  income: boolean;
+  name: string;
+  date: string;
+}
+
+interface DecodedToken {
+  sub: string;           // Cognito User ID
+  email: string;
+  'cognito:username': string;
+  exp: number;
+  iat: number;
+  // ... otros campos que pueda tener el token
+}
 
 export default function Profile() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const theme = useTheme();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
@@ -131,11 +158,59 @@ export default function Profile() {
     date: string;
   }>>([]);
 
+  const getUserIdFromToken = (): string => {
+    if (!token) return '';
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      console.log('Token decodificado:', decoded); // Para debug
+      return decoded.sub || ''; // El sub del token contiene el userId de Cognito
+    } catch (error) {
+      console.error('Error decodificando token:', error);
+      return '';
+    }
+  };
+
   useEffect(() => {
     const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     setBalanceTotal(totalIncome - totalExpenses);
   }, [incomes, expenses]);
+
+  // Cargar movimientos al iniciar
+  useEffect(() => {
+    if (token) {
+      fetchBalanceEntries();
+    }
+  }, [token]);
+
+  const fetchBalanceEntries = async () => {
+    try {
+      const userId = getUserIdFromToken();
+      console.log('Fetching balance for userId:', userId);
+      
+      if (!userId) {
+        throw new Error('No se pudo obtener el userId');
+      }
+
+      const response = await api.get(`/balance/${userId}`);
+      console.log('API Response:', response.data);
+      
+      const parsedBody = JSON.parse(response.data.body);
+      
+      if (parsedBody.success && Array.isArray(parsedBody.data)) {
+        const formattedEntries: BalanceEntry[] = parsedBody.data.map((entry: APIBalanceEntry) => ({
+          id: Date.now() + Math.random(),
+          name: entry.name,
+          type: entry.income ? 'ingreso' : 'egreso',
+          amount: Number(entry.amount),
+          date: entry.date
+        }));
+        setBalanceList(formattedEntries);
+      }
+    } catch (error) {
+      console.error('Error al cargar los movimientos:', error);
+    }
+  };
 
   const handleEditOpen = () => {
     setEditFormData({
@@ -351,26 +426,52 @@ export default function Profile() {
     setIsBalanceDialogOpen(false);
   };
 
-  const handleBalanceSave = () => {
-    if (!newBalance.name || !newBalance.amount) {
+  const handleBalanceSave = async () => {
+    if (!newBalance.name || !newBalance.amount || !token) {
       return;
     }
 
+    const userId = getUserIdFromToken();
     const newEntry = {
-      id: Date.now(),
-      name: newBalance.name,
-      type: newBalance.type as 'ingreso' | 'egreso',
+      userId: userId,
       amount: Number(newBalance.amount),
+      income: newBalance.type === 'ingreso',
+      name: newBalance.name,
       date: new Date().toISOString()
     };
 
-    setBalanceList([newEntry, ...balanceList]);
-    setIsBalanceDialogOpen(false);
-    setNewBalance({ name: '', type: 'ingreso', amount: '' });
+    try {
+      console.log('Enviando entrada:', newEntry);
+      const response = await api.post('/balance', newEntry);
+      console.log('Respuesta del servidor:', response.data);
+      const parsedBody = JSON.parse(response.data.body);
+      
+      if (parsedBody.success) {
+        const newBalanceEntry: BalanceEntry = {
+          id: Date.now(),
+          name: parsedBody.data.name,
+          type: parsedBody.data.income ? 'ingreso' : 'egreso',
+          amount: Number(parsedBody.data.amount),
+          date: parsedBody.data.date
+        };
+        
+        setBalanceList(prevList => [newBalanceEntry, ...prevList]);
+        setIsBalanceDialogOpen(false);
+        setNewBalance({ name: '', type: 'ingreso', amount: '' });
+      }
+    } catch (error) {
+      console.error('Error al guardar el movimiento:', error);
+    }
   };
 
-  const handleDeleteBalance = (id: number) => {
-    setBalanceList(balanceList.filter(item => item.id !== id));
+  const handleDeleteBalance = async (id: number) => {
+    try {
+      await api.delete(`/balance/${id}`);
+      // Actualizar la lista de movimientos
+      await fetchBalanceEntries();
+    } catch (error) {
+      console.error('Error al eliminar el movimiento:', error);
+    }
   };
 
   return (
