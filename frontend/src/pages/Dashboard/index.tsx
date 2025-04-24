@@ -5,6 +5,7 @@ import ExpensesChart from '../../components/ExpensesChart/ExpensesChart';
 import { TransactionsChart } from '../../components/TransactionsChart/TransactionsChart';
 import { Avatar } from '../../components/Avatar/Avatar';
 import { UserAvatar } from '../../components/UserAvatar/UserAvatar';
+import { ChatBot } from '../../components/ChatBot/ChatBot';
 
 interface Transaction {
   date: string;
@@ -251,7 +252,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* Profile Section */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={4} id="profile-section">
           <Card sx={cardStyle}>
             <CardContent sx={{ p: 4 }}>
               <Box sx={{
@@ -318,7 +319,7 @@ const Dashboard = () => {
               </Typography>
 
               {/* Balance Total */}
-              <Box sx={{ 
+              <Box id="balance-total" sx={{ 
                 bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)', 
                 p: 4, 
                 borderRadius: 2,
@@ -346,7 +347,7 @@ const Dashboard = () => {
               {/* Ingresos y Gastos */}
               <Grid container spacing={3}>
                 {/* Ingresos Mensuales */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={6} id="ingresos-mensuales">
                   <Box sx={{ 
                     bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)', 
                     p: 2, 
@@ -382,7 +383,7 @@ const Dashboard = () => {
                 </Grid>
 
                 {/* Gastos Mensuales */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={6} id="gastos-mensuales">
                   <Box sx={{ 
                     bgcolor: theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.1)' : 'rgba(244, 67, 54, 0.05)', 
                     p: 2, 
@@ -422,7 +423,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* Transactions Section */}
-        <Grid item xs={12}>
+        <Grid item xs={12} id="transactions-summary">
           <Card sx={cardStyle}>
             <CardContent>
               <Typography variant="h6" sx={headerStyle} gutterBottom>
@@ -436,6 +437,9 @@ const Dashboard = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* ChatBot Component */}
+      <ChatBot />
     </Box>
   );
 };
