@@ -250,61 +250,101 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        {/* Avatar Section */}
-        <Grid item xs={12} md={6}>
+        {/* Profile Section */}
+        <Grid item xs={12} md={4}>
           <Card sx={cardStyle}>
-            <CardContent>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                mb: 2
+                gap: 3,
+                height: '100%'
               }}>
-                <Typography variant="h6" sx={headerStyle}>
-                  Tu Avatar Financiero
-                </Typography>
+                <UserAvatar healthStatus={financialHealth.status} size={240} />
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <Typography variant="h4" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
+                    Juan Pérez
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                    Miembro desde 2024
+                  </Typography>
+                </Box>
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  width: '100%',
+                  mt: 2
+                }}>
+                  <Typography variant="h6" sx={{ color: theme.palette.text.primary, textAlign: 'center', mb: 1 }}>
+                    Información Personal
+                  </Typography>
+                  <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                    p: 3,
+                    borderRadius: 2
+                  }}>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                      Correo: juan.perez@example.com
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                      Teléfono: +34 123 456 789
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                      País: España
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
-              <UserAvatar healthStatus={financialHealth.status} />
             </CardContent>
           </Card>
         </Grid>
 
         {/* Financial Health Section */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={8}>
           <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" sx={{ color: theme.palette.success.main, mb: 3 }}>
+            <CardContent sx={{ p: 4 }}>
+              <Typography variant="h4" sx={{ color: theme.palette.success.main, mb: 4, fontWeight: 500 }}>
                 Resumen Financiero
               </Typography>
 
               {/* Balance Total */}
               <Box sx={{ 
                 bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)', 
-                p: 3, 
+                p: 4, 
                 borderRadius: 2,
                 border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.15)'}`,
-                mb: 3
+                mb: 4
               }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <AccountBalance sx={{ color: theme.palette.success.main, fontSize: 28 }} />
-                  <Typography variant="h6" sx={{ color: theme.palette.success.main }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                  <AccountBalance sx={{ color: theme.palette.success.main, fontSize: 32 }} />
+                  <Typography variant="h5" sx={{ color: theme.palette.success.main }}>
                     Balance Total
                   </Typography>
                 </Box>
-                <Typography variant="h3" sx={{ color: theme.palette.success.main, mb: 1 }}>
+                <Typography variant="h2" sx={{ color: theme.palette.success.main, mb: 2 }}>
                   {new Intl.NumberFormat('es-MX', { 
                     style: 'currency', 
                     currency: locationInfo?.currency || 'MXN',
                     minimumFractionDigits: 2
                   }).format(transactions.reduce((sum, t) => sum + (t.type === 'ingreso' ? t.amount : -t.amount), 0))}
                 </Typography>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                   Actualizado hace 2 horas
                 </Typography>
               </Box>
 
               {/* Ingresos y Gastos */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid container spacing={3}>
                 {/* Ingresos Mensuales */}
                 <Grid item xs={12} md={6}>
                   <Box sx={{ 

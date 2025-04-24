@@ -477,6 +477,72 @@ export default function Profile() {
             </Grid>
           </Paper>
         </Grid>
+
+        {/* Avatar Customization Section */}
+        <Grid container spacing={3} sx={{ mt: 3 }}>
+          <Grid item xs={12}>
+            <Paper sx={{
+              p: 3,
+              bgcolor: theme.palette.mode === 'dark' ? 'rgba(38, 38, 38, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+              borderRadius: 2,
+              border: '1px solid rgba(50, 205, 50, 0.5)',
+              boxShadow: '0 0 10px rgba(50, 205, 50, 0.2)'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3
+              }}>
+                <Typography variant="h6" sx={{ color: theme.palette.success.main }}>
+                  Personalizar Avatar
+                </Typography>
+              </Box>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Estilo de pelo</InputLabel>
+                    <Select
+                      defaultValue="shortCombover"
+                      label="Estilo de pelo"
+                    >
+                      <MenuItem value="shortCombover">Corto con raya</MenuItem>
+                      <MenuItem value="longHair">Pelo largo</MenuItem>
+                      <MenuItem value="curlyHair">Pelo rizado</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Color de pelo</InputLabel>
+                    <Select
+                      defaultValue="brown"
+                      label="Color de pelo"
+                    >
+                      <MenuItem value="brown">Castaño</MenuItem>
+                      <MenuItem value="black">Negro</MenuItem>
+                      <MenuItem value="blonde">Rubio</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Color de piel</InputLabel>
+                    <Select
+                      defaultValue="light"
+                      label="Color de piel"
+                    >
+                      <MenuItem value="light">Clara</MenuItem>
+                      <MenuItem value="medium">Media</MenuItem>
+                      <MenuItem value="dark">Oscura</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Grid>
+        </Grid>
       </Grid>
 
       {/* Personal Information Edit Modal */}
