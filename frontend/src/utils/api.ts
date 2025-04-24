@@ -24,12 +24,12 @@ api.interceptors.request.use(
 
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
-      // Usar el store para hacer logout
       useAuthStore.getState().logout();
-      // Redirigir al login
       window.location.href = "/login";
     }
     return Promise.reject(error);
